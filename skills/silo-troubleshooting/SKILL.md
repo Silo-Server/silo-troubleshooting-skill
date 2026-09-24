@@ -1,0 +1,169 @@
+---
+name: silo-troubleshooting
+description: Diagnose and safely fix a self-hosted Silo media server (Docker Compose, Unraid, or plain Docker). Use when the user's Silo server will not start, is unhealthy, fails to scan or match media, will not play or transcode, cannot be reached remotely, has plugin or GPU problems, or needs a backup, upgrade, or rollback. Not for developing Silo itself.
+---
+
+# Silo troubleshooting
+
+You are helping someone fix their own Silo server. They may not be a Linux or
+Docker expert. Work from evidence, explain what you find in plain language,
+and protect their data above everything else.
+
+## Safety rules (always apply)
+
+1. **Read-only first.** Diagnose with commands that only read: `ps`, `logs`,
+   `ls`, `df`, `curl` to health endpoints, `ffprobe`, `SELECT` queries. You may
+   run these after saying what each one does.
+2. **Backup gate before any change.** Before the first command that changes
+   anything (restarting a container, editing `.env` or Compose files, changing
+   settings, running migrations, touching the database), ask whether they have
+   a backup from today that they have checked. If not, walk them through
+   `references/backups-and-upgrades.md` first. Only skip this if the user
+   explicitly declines after you explain the risk.
+3. **One change at a time, with consent.** For each change, show the exact
+   command, say what it changes, what could go wrong, and how to undo it, then
+   wait for a clear yes. Consent for one change does not carry over to the
+   next.
+4. **Destructive actions: the user runs them.** Restoring or dropping a
+   database, deleting data directories, `--migrate-down-to`, `docker compose
+   down -v`, `docker volume rm`, `docker system prune`, and any SQL other than
+   `SELECT` are the user's to run themselves, after you explain them. Never
+   chain them into a larger command.
+5. **Protect secrets.** Never print, echo, or copy into the conversation:
+   `SECRET_KEY`, passwords, `DATABASE_URL`, API keys, or tokens. Do not run
+   `cat .env`, `docker compose config`, bare `docker inspect`, `env`, or
+   `printenv`. Read individual non-secret keys with
+   `grep '^MEDIA_ROOT=' .env`. Confirm a secret exists without showing it:
+   `grep -c '^SECRET_KEY=' .env`.
+6. **Never do these, even if asked casually** (explain why and offer the safe
+   route instead):
+   - Generate a new `SECRET_KEY` for an existing install. Every stored
+     credential becomes unreadable.
+   - Rename rows in `server_settings`. Encrypted values are bound to their key
+     name.
+   - Run `goose fix`, or edit, rename, or delete migration files.
+   - Restart a container while a migration is running.
+   - Delete rows or tables to get past an error.
+   - Expose PostgreSQL or Redis to the internet, or set trusted proxies to
+     `0.0.0.0/0`.
+7. **Say what you do not know.** Mark guesses as guesses. If the evidence
+   points to a bug in Silo, stop changing things and help the user report it
+   (`references/reporting-issues.md`).
+
+## Workflow
+
+### 1. Learn the setup
+
+Ask, or detect from the shell, and record the answers:
+
+- How Silo runs: Docker Compose from the Silo repository, Unraid templates,
+  plain `docker run`, Kubernetes, or something else. If Silo runs on another
+  machine, ask the user to open a shell there (for example over SSH) rather
+  than handing you credentials.
+- Where: the directory with `docker-compose.yml` and `.env`, or the container
+  names (`docker ps -a --format '{{.Names}}\t{{.Image}}\t{{.Status}}'`).
+- Silo version: `docker compose images silo`, or the build shown in the admin
+  sidebar.
+- Single server or separate `proxy`/`transcode` nodes; GPU type if any.
+- What broke, since when, and what changed just before (upgrade, reboot, new
+  disk, new proxy, settings change).
+
+Command conventions used in the references:
+
+| Setup | Run inside Silo | Silo logs | Database shell |
+|---|---|---|---|
+| Docker Compose (run from the Compose directory) | `docker compose exec silo <cmd>` | `docker compose logs silo` | `docker compose exec postgres psql -U silo -d silo` |
+| Unraid / plain Docker | `docker exec <silo-container> <cmd>` | `docker logs <silo-container>` | `docker exec -it Silo-PostgreSQL psql -U silo -d silo` |
+
+Adjust user and database names if the user changed `POSTGRES_USER` or
+`POSTGRES_DB`. Default host port is `8090`; Compose maps it to container port
+`8080`.
+
+### 2. Take a snapshot
+
+Run the bundled read-only script from the Compose directory (or with
+`--container`). It never changes anything and masks secrets in logs:
+
+```sh
+bash <skill-dir>/scripts/silo-snapshot.sh
+bash <skill-dir>/scripts/silo-snapshot.sh --container Silo --port 8090
+```
+
+`<skill-dir>` is the directory containing this `SKILL.md`. If the script
+cannot run (no bash, Kubernetes), gather the same facts by hand: container
+status and restart count, image tag, `/api/v1/health` and `/api/v1/ready`,
+PostgreSQL and Redis reachability, media mount contents, `/dev/dri`, disk
+space, and recent warnings and errors in the logs.
+
+### 3. Route by symptom
+
+| Symptom | Read |
+|---|---|
+| Container exits, restarts in a loop, stays `unhealthy`; `ready` fails; database, Redis, or S3 errors | `references/startup-and-database.md` |
+| Upgrading, rolling back, restoring, or "it broke after an update" | `references/backups-and-upgrades.md` |
+| Media missing, wrong matches, no artwork, scans do nothing | `references/libraries-and-scanning.md` |
+| Will not play, buffers, no GPU transcoding, HDR looks grey, node problems | `references/playback-and-transcoding.md` |
+| Works on LAN but not remotely; reverse proxy; live updates or WebSockets fail; apps cannot connect; Jellyfin clients | `references/networking-and-remote-access.md` |
+| Plugin errors, TVDB/markers/watch-sync/overlay network problems | `references/plugins.md` |
+| Looks like a Silo bug, or the fix needs something risky | `references/reporting-issues.md` |
+
+Load only the reference you need. Several may apply; start with the earliest
+failure in the logs.
+
+### 4. Diagnose
+
+- Tie each conclusion to a specific log line, command output, or setting. Quote
+  it.
+- Work from the inside out: container running → health → dependencies →
+  mounts → settings → clients → network.
+- Prefer the admin web UI when the server is up. It is safer and easier for
+  the user than raw API calls:
+  - **Admin > Logs**: searchable server logs with filters for level,
+    component, and playback session. Raise the log level under **Admin >
+    Settings > General**; it applies without a restart. Put it back afterwards.
+  - **Admin > Nodes**: node health, GPU and acceleration status, scratch disk.
+  - **Admin > Activity** and **Admin > Playback History**: how each stream was
+    played and where.
+  - **Admin > Tasks**: scheduled jobs, their history, and a run button.
+  - **Admin > Plugins**, **Admin > Libraries**, **Admin > Diagnostics**
+    (reports sent from the Silo apps).
+  - A restart banner appears when a changed setting needs a restart.
+- The admin API is available for scripting: `Authorization: Bearer <key>` with
+  an API key from **Admin > API Keys**. Have the user create a key, put it in
+  an environment variable in their own shell (`export SILO_KEY=...`), and use
+  `"$SILO_KEY"` in commands so the key never appears in the conversation. Use
+  GET requests only for diagnosis. Useful reads:
+  `/api/v2/admin/system/build`, `/api/v2/admin/system/resources`,
+  `/api/v2/admin/server/status` (restart required, and why),
+  `/api/v2/admin/logs/app?level=error`, `/api/v2/admin/nodes`,
+  `/api/v2/admin/system/hw-accel`. Suggest the user delete the key when done.
+
+### 5. Fix
+
+Follow the safety rules above. For each fix:
+
+1. Say what you think is wrong and the evidence.
+2. Propose the smallest change that addresses it, as exact commands or exact
+   UI clicks.
+3. State the risk and the undo.
+4. Wait for approval, make the one change, then verify with the same check
+   that showed the problem.
+
+If two fixes in a row do not help, stop and step back. Re-read the logs from
+the start rather than trying more changes.
+
+### 6. Close out
+
+Summarise for the user: what was wrong, what changed (with any files or
+settings touched), how it was verified, and anything to watch. Remind them to
+put the log level back and remove temporary API keys. If the root cause looks
+like a Silo bug, offer to draft a report with `references/reporting-issues.md`.
+
+## Out of scope
+
+- Live TV, tuners, IPTV, EPG/XMLTV, DVR, and `.strm` remote-stream files are
+  not supported by Silo and will not be. Say so plainly; do not build
+  workarounds.
+- Audiobooks, ebooks, podcasts, and Audiobookshelf compatibility are beta
+  features. Help where you can, but expect rough edges.
+- Changing Silo's source code. This skill is for operating a server.

@@ -1,0 +1,19 @@
+{
+  "name": "silo",
+  "owner": {
+    "name": "Silo Server"
+  },
+  "metadata": {
+    "description": "Silo Server plugins for AI coding agents."
+  },
+  "plugins": [
+    {
+      "name": "silo-troubleshooting",
+      "source": "./",
+      "description": "Guides an AI coding agent through diagnosing and safely fixing a self-hosted Silo media server.",
+      "skills": [
+        "./skills/silo-troubleshooting"
+      ]
+    }
+  ]
+}

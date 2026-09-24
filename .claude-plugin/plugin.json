@@ -1,0 +1,10 @@
+{
+  "name": "silo-troubleshooting",
+  "description": "Guides an AI coding agent through diagnosing and safely fixing a self-hosted Silo media server.",
+  "author": {
+    "name": "Silo Server"
+  },
+  "homepage": "https://github.com/Silo-Server/silo-troubleshooting-skill",
+  "license": "AGPL-3.0-only",
+  "keywords": ["silo", "media-server", "self-hosting", "troubleshooting", "docker"]
+}
