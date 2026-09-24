@@ -1,6 +1,6 @@
 ---
 name: silo-troubleshooting
-description: Diagnose and safely fix a self-hosted Silo media server (Docker Compose, Unraid, or plain Docker). Use when the user's Silo server will not start, is unhealthy, fails to scan or match media, will not play or transcode, cannot be reached remotely, has plugin or GPU problems, or needs a backup, upgrade, or rollback. Not for developing Silo itself.
+description: Diagnose and safely fix a self-hosted Silo media server (Docker Compose, Unraid, or plain Docker). Use when the user's Silo server will not start, is unhealthy, fails to scan or match media, will not play or transcode, cannot be reached remotely, has plugin or GPU problems, or needs an upgrade or rollback. Not for developing Silo itself.
 ---
 
 # Silo troubleshooting
@@ -21,9 +21,11 @@ and protect their data above everything else.
 2. **Backup gate before any change.** Before the first command that changes
    anything (restarting a container, editing `.env` or Compose files, changing
    settings, running migrations, touching the database), ask whether they have
-   a backup from today that they have checked. If not, walk them through
-   `references/backups-and-upgrades.md` first. Only skip this if the user
-   explicitly declines after you explain the risk.
+   a backup from today that they have checked, covering the database, the
+   `SECRET_KEY`, and their deployment configuration. If not, tell them to make
+   one with the tools they already use and wait. Do not write backup or
+   restore commands for them; setups differ too much. Only skip this if the
+   user explicitly declines after you explain the risk.
 3. **One change at a time, with consent.** For each change, show the exact
    command, say what it changes, what could go wrong, and how to undo it, then
    wait for a clear yes. Consent for one change does not carry over to the
@@ -113,7 +115,7 @@ space, and recent warnings and errors in the logs.
 | Symptom | Read |
 |---|---|
 | Container exits, restarts in a loop, stays `unhealthy`; `ready` fails; database, Redis, or S3 errors | `references/startup-and-database.md` |
-| Upgrading, rolling back, restoring, or "it broke after an update" | `references/backups-and-upgrades.md` |
+| Upgrading, rolling back, or "it broke after an update" | `references/upgrades-and-rollback.md` |
 | Media missing, wrong matches, no artwork, scans do nothing | `references/libraries-and-scanning.md` |
 | Will not play, buffers, no GPU transcoding, HDR looks grey, node problems | `references/playback-and-transcoding.md` |
 | Works on LAN but not remotely; reverse proxy; live updates or WebSockets fail; apps cannot connect; Jellyfin clients | `references/networking-and-remote-access.md` |

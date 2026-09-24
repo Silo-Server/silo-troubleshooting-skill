@@ -25,11 +25,11 @@ failure; find the line with a fatal message.
 
 | Message (after the timestamp) | Meaning | Safe fix |
 |---|---|---|
-| Compose: `required variable SECRET_KEY is missing a value` or `required variable MEDIA_ROOT is missing a value` | `.env` lacks the variable, or Compose is run from the wrong directory | Run from the directory with `.env`. New install: add the value. Existing install: restore the original `SECRET_KEY` from backup. |
+| Compose: `required variable SECRET_KEY is missing a value` or `required variable MEDIA_ROOT is missing a value` | `.env` lacks the variable, or Compose is run from the wrong directory | Run from the directory with `.env`. New install: add the value. Existing install: put back the original `SECRET_KEY` from the user's records. |
 | `Bind for 0.0.0.0:8096 failed: port is already allocated` (or 8090, 13378) | Another program (often Jellyfin) uses the port | Stop the other program, or change `PORT`/`JF_PORT`/`ABS_PORT` in `.env`. |
 | `bootstrap: DATABASE_URL is required (set in .env or environment)` | No database URL (Unraid, custom Compose) | Set it. Compose sets it for the bundled database. |
 | `bootstrap: SECRET_KEY is required (>=32 chars); generate one with: openssl rand -base64 48` | Key missing or shorter than 32 characters | New install: generate one. **Existing install: restore the original key. Never generate a new one.** |
-| `loading settings: decrypt setting "...": secret: authenticate ciphertext: ...` | `SECRET_KEY` does not match this database (key changed, or a dump restored with a different key) | Put back the key this database was created with. Never delete or rename the setting rows. |
+| `loading settings: decrypt setting "...": secret: authenticate ciphertext: ...` | `SECRET_KEY` does not match this database (key changed, or a database backup restored with a different key) | Put back the key this database was created with. Never delete or rename the setting rows. |
 | `database pool: ...` | Wrong host, password, or database name; PostgreSQL not ready | See "Check the database URL safely" below, then the PostgreSQL logs. |
 | `failed to run migrations: ...` | A migration failed or timed out | See "Migration failures". Do not keep restarting. |
 | `log stream hub start: ...` (often `connection refused`) | Redis is unreachable | Check `REDIS_URL` and that Redis runs. Needed in every mode. |

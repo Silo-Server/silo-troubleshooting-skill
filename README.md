@@ -16,8 +16,7 @@ then works through the problem with you in your own terminal.
 > the one approving commands on your own machine. Back up first, read every
 > command before you approve it, and say no when you are not sure.
 >
-> [Back up in two minutes](#back-up-first) · Provided as is, with no warranty
-> (see [License](#license)).
+> Provided as is, with no warranty (see [License](#license)).
 
 ## What it helps with
 
@@ -27,7 +26,7 @@ then works through the problem with you in your own terminal.
 - Playback failures, buffering, hardware transcoding (Intel, AMD, NVIDIA)
 - Reverse proxies, remote access, apps that cannot connect, Jellyfin clients
 - Plugin errors
-- Safe upgrades, rollbacks, and backups
+- Safe upgrades and rollbacks
 - Drafting a good bug report when the problem is in Silo itself
 
 It supports Docker Compose (the standard install), Unraid, and plain Docker.
@@ -44,37 +43,20 @@ Kubernetes and other setups work too, but the agent has to adapt the commands.
 
 ## Back up first
 
-Run these from the directory that holds Silo's `docker-compose.yml`:
+Back up your Silo server before you let an agent near it, using whatever
+backup tools you already rely on. Silo runs on too many kinds of setups for us
+to give one backup recipe, so this skill does not tell you how. Make sure
+your backup includes:
 
-```sh
-# Which build is running (write it down; you need it to roll back)
-docker image inspect --format '{{join .RepoDigests " "}}' \
-  "$(docker inspect --format '{{.Image}}' "$(docker compose ps -q silo)")"
+- The PostgreSQL database.
+- Your `SECRET_KEY`, stored separately from the database backup. **Without the
+  same `SECRET_KEY`, Silo refuses to start on a restored database.**
+- Your deployment configuration: Compose files and `.env`, container
+  templates, or manifests.
+- Local artwork, if you store artwork on disk rather than S3.
 
-# Dump the database and check the dump is readable
-docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB"' > silo-$(date +%F).dump
-docker compose exec -T postgres pg_restore --list < silo-$(date +%F).dump > /dev/null && echo "backup is readable"
-
-# Keep a copy of your settings file
-cp .env silo-env-$(date +%F).backup && chmod 600 silo-env-$(date +%F).backup
-```
-
-The build number also appears in Silo's admin sidebar.
-
-Unraid, using the official template names:
-
-```sh
-mkdir -p /mnt/user/backups
-docker exec Silo-PostgreSQL sh -c 'pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB"' > /mnt/user/backups/silo-$(date +%F).dump
-```
-
-Then copy your `SECRET_KEY` somewhere safe. On Unraid it is a variable in the
-Silo container settings. **Without the same `SECRET_KEY`, Silo refuses to start on a
-restored database.** Keep the key separate from
-the dump.
-
-The skill's [backup guide](skills/silo-troubleshooting/references/backups-and-upgrades.md)
-covers restores and what else is worth keeping.
+Then check that you can restore it. The agent asks about your backup before
+it changes anything.
 
 ## Install
 
