@@ -12,8 +12,12 @@ and protect their data above everything else.
 ## Safety rules (always apply)
 
 1. **Read-only first.** Diagnose with commands that only read: `ps`, `logs`,
-   `ls`, `df`, `curl` to health endpoints, `ffprobe`, `SELECT` queries. You may
-   run these after saying what each one does.
+   `ls`, `df`, `curl` to health endpoints, `ffprobe`, and `SELECT` queries
+   limited to counts, sizes, and status (never rows from `users`, sessions,
+   API keys, or settings). You may run these after saying what each one does.
+   Never run a command that does not return on its own (`logs -f`,
+   `docker stats` without `--no-stream`, `top`); ask the user to run those in
+   their own terminal.
 2. **Backup gate before any change.** Before the first command that changes
    anything (restarting a container, editing `.env` or Compose files, changing
    settings, running migrations, touching the database), ask whether they have
@@ -24,21 +28,28 @@ and protect their data above everything else.
    command, say what it changes, what could go wrong, and how to undo it, then
    wait for a clear yes. Consent for one change does not carry over to the
    next.
-4. **Destructive actions: the user runs them.** Restoring or dropping a
-   database, deleting data directories, `--migrate-down-to`, `docker compose
-   down -v`, `docker volume rm`, `docker system prune`, and any SQL other than
-   `SELECT` are the user's to run themselves, after you explain them. Never
-   chain them into a larger command.
+4. **Destructive actions: the user runs them, not you, even with approval.**
+   Restoring or dropping a database, deleting or moving data directories,
+   `--migrate-only`, `--migrate-down-to`, `docker compose down -v`,
+   `docker volume rm`, `docker system prune`, and any SQL that writes. Show
+   the exact command, explain it, and let the user run it in their own
+   terminal. Never chain these into a larger command.
 5. **Protect secrets.** Never print, echo, or copy into the conversation:
-   `SECRET_KEY`, passwords, `DATABASE_URL`, API keys, or tokens. Do not run
-   `cat .env`, `docker compose config`, bare `docker inspect`, `env`, or
-   `printenv`. Read individual non-secret keys with
-   `grep '^MEDIA_ROOT=' .env`. Confirm a secret exists without showing it:
-   `grep -c '^SECRET_KEY=' .env`.
+   `SECRET_KEY`, passwords, `DATABASE_URL`, API keys, or tokens. Never ask the
+   user to paste one into the chat. Do not run `cat .env`,
+   `docker compose config`, `docker inspect` without `--format`, `env` or
+   `printenv` (on the host or inside a container), or read Unraid's container
+   templates (`/boot/config/plugins/dockerMan/templates-user/*.xml`, which
+   store every variable in plain text). Safe checks:
+   - One non-secret key: `grep '^MEDIA_ROOT=' .env`.
+   - A secret exists: `grep -c '^SECRET_KEY=' .env`, or inside the container
+     `sh -c '[ ${#SECRET_KEY} -ge 32 ] && echo "SECRET_KEY set" || echo "SECRET_KEY missing or short"'`.
+   - The database URL with its password masked: see
+     `references/startup-and-database.md`.
 6. **Never do these, even if asked casually** (explain why and offer the safe
    route instead):
-   - Generate a new `SECRET_KEY` for an existing install. Every stored
-     credential becomes unreadable.
+   - Generate a new `SECRET_KEY` for an existing install. Silo refuses to
+     start, and stored credentials cannot be recovered without the old key.
    - Rename rows in `server_settings`. Encrypted values are bound to their key
      name.
    - Run `goose fix`, or edit, rename, or delete migration files.
@@ -62,8 +73,8 @@ Ask, or detect from the shell, and record the answers:
   than handing you credentials.
 - Where: the directory with `docker-compose.yml` and `.env`, or the container
   names (`docker ps -a --format '{{.Names}}\t{{.Image}}\t{{.Status}}'`).
-- Silo version: `docker compose images silo`, or the build shown in the admin
-  sidebar.
+- Silo version: the build shown in the admin sidebar. `docker compose images
+  silo` only shows the tag, which is often just `latest`.
 - Single server or separate `proxy`/`transcode` nodes; GPU type if any.
 - What broke, since when, and what changed just before (upgrade, reboot, new
   disk, new proxy, settings change).
@@ -73,11 +84,13 @@ Command conventions used in the references:
 | Setup | Run inside Silo | Silo logs | Database shell |
 |---|---|---|---|
 | Docker Compose (run from the Compose directory) | `docker compose exec silo <cmd>` | `docker compose logs silo` | `docker compose exec postgres psql -U silo -d silo` |
-| Unraid / plain Docker | `docker exec <silo-container> <cmd>` | `docker logs <silo-container>` | `docker exec -it Silo-PostgreSQL psql -U silo -d silo` |
+| Unraid / plain Docker | `docker exec <silo-container> <cmd>` | `docker logs <silo-container>` | `docker exec -i Silo-PostgreSQL psql -U silo -d silo -c '...'` |
 
 Adjust user and database names if the user changed `POSTGRES_USER` or
-`POSTGRES_DB`. Default host port is `8090`; Compose maps it to container port
-`8080`.
+`POSTGRES_DB`. The Unraid templates name the containers `Silo` and
+`Silo-PostgreSQL`. Default host port is `8090`; Compose maps it to container
+port `8080`. FFmpeg in the Silo image is at `/usr/lib/jellyfin-ffmpeg/ffmpeg`
+and `/usr/lib/jellyfin-ffmpeg/ffprobe`, not on `PATH`.
 
 ### 2. Take a snapshot
 
@@ -124,19 +137,26 @@ failure in the logs.
   - **Admin > Nodes**: node health, GPU and acceleration status, scratch disk.
   - **Admin > Activity** and **Admin > Playback History**: how each stream was
     played and where.
-  - **Admin > Tasks**: scheduled jobs, their history, and a run button.
+  - **Admin > Scheduled Tasks**: background jobs, their history, and a run
+    button.
   - **Admin > Plugins**, **Admin > Libraries**, **Admin > Diagnostics**
     (reports sent from the Silo apps).
   - A restart banner appears when a changed setting needs a restart.
-- The admin API is available for scripting: `Authorization: Bearer <key>` with
-  an API key from **Admin > API Keys**. Have the user create a key, put it in
-  an environment variable in their own shell (`export SILO_KEY=...`), and use
-  `"$SILO_KEY"` in commands so the key never appears in the conversation. Use
-  GET requests only for diagnosis. Useful reads:
+- The admin API is available for scripting with an API key from an admin
+  account (**Admin > API Keys**). Your shell does not see variables the user
+  exports in their own terminal, so have the user store the key in a file
+  themselves:
+
+  ```sh
+  umask 077; printf %s 'sa_...' > ~/.silo-key
+  ```
+
+  Then call `curl -fsS -H "Authorization: Bearer $(cat ~/.silo-key)" http://localhost:8090/api/v2/...`.
+  Never ask for the key in chat. Use GET requests only for diagnosis. Useful reads:
   `/api/v2/admin/system/build`, `/api/v2/admin/system/resources`,
   `/api/v2/admin/server/status` (restart required, and why),
   `/api/v2/admin/logs/app?level=error`, `/api/v2/admin/nodes`,
-  `/api/v2/admin/system/hw-accel`. Suggest the user delete the key when done.
+  `/api/v2/admin/system/hw-accel`. When done, the user deletes `~/.silo-key` and revokes the key.
 
 ### 5. Fix
 
@@ -156,7 +176,8 @@ the start rather than trying more changes.
 
 Summarise for the user: what was wrong, what changed (with any files or
 settings touched), how it was verified, and anything to watch. Remind them to
-put the log level back and remove temporary API keys. If the root cause looks
+put the log level back and to delete `~/.silo-key` and revoke the API key if
+one was used. If the root cause looks
 like a Silo bug, offer to draft a report with `references/reporting-issues.md`.
 
 ## Out of scope

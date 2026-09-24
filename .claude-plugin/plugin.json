@@ -5,6 +5,6 @@
     "name": "Silo Server"
   },
   "homepage": "https://github.com/Silo-Server/silo-troubleshooting-skill",
-  "license": "AGPL-3.0-only",
+  "license": "AGPL-3.0-or-later",
   "keywords": ["silo", "media-server", "self-hosting", "troubleshooting", "docker"]
 }

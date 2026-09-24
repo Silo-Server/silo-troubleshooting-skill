@@ -42,13 +42,18 @@ or descriptions.
    docker compose exec silo sh -c 'd=/mnt/media/Movies/Some\ Movie; while [ "$d" != / ]; do ls -a "$d" | grep -E "^\.(nomedia|ignore|siloignore)$" && echo "  in $d"; d=$(dirname "$d"); done'
    ```
 
-5. **Did the scan run and what did it log?** Trigger a scan from
-   **Admin > Libraries**, then read **Admin > Logs** filtered to component
-   `scanner`, or the container logs:
+5. **Did the scan run and what did it log?** Read **Admin > Logs** filtered to
+   component `scanner`, or the container logs:
 
    ```sh
    docker compose logs --since 30m silo 2>&1 | grep -i 'scanner'
    ```
+
+   Only trigger a new scan (a change that needs the user's approval) once
+   every library folder is fully mounted and readable. Files that stay
+   missing are removed from the catalog after a 24-hour grace period
+   (`scanner.file_removal_grace`), and the daily 02:00 scan will do that on
+   its own. Fix a dropped network share within that window.
 
 ## Log messages and what they mean
 
@@ -65,17 +70,18 @@ or descriptions.
 Probe a suspect file:
 
 ```sh
-docker compose exec silo ffprobe -v error -show_format -show_streams "/mnt/media/Movies/Film (2020)/Film (2020).mkv" | head -40
+docker compose exec silo /usr/lib/jellyfin-ffmpeg/ffprobe -v error -show_format -show_streams "/mnt/media/Movies/Film (2020)/Film (2020).mkv" | head -40
 ```
 
 ## Wrong or missing metadata
 
-- TMDB matching is built in and works without an API key; Silo ships a default
-  key. TVDB comes from the `silo.tvdb` plugin. Silo installs `silo.tmdb`,
+- Metadata comes from plugins: TMDB from `silo.tmdb` (works without an API
+  key of your own), TVDB from `silo.tvdb`. Silo installs `silo.tmdb`,
   `silo.tvdb`, and `silo.theintrodb` automatically at startup if they are
-  missing and available in the official catalog.
+  missing and available in the official catalog. Local `.nfo` files are read
+  without a plugin.
 - Check **Admin > Plugins** for the provider's state and configuration. Check
-  **Admin > Settings > Providers** for provider order and keys.
+  **Admin > Settings > Subtitles & Metadata** for provider order and keys.
 - `tmdb: rate limited after N retries` or `tmdb: server error ...` in the logs
   means TMDB itself refused or failed. Wait and retry; changing Silo settings
   will not help.

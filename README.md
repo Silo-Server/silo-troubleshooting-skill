@@ -44,28 +44,33 @@ Kubernetes and other setups work too, but the agent has to adapt the commands.
 
 ## Back up first
 
-Run these from the directory that holds Silo's `docker-compose.yml`. The first
-line records which version you run now, in case you need to roll back.
+Run these from the directory that holds Silo's `docker-compose.yml`:
 
 ```sh
-docker compose images silo
-docker compose exec -T postgres pg_dump -U silo -Fc silo > silo-$(date +%F).dump
+# Which build is running (write it down; you need it to roll back)
+docker image inspect --format '{{join .RepoDigests " "}}' \
+  "$(docker inspect --format '{{.Image}}' "$(docker compose ps -q silo)")"
+
+# Dump the database and check the dump is readable
+docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB"' > silo-$(date +%F).dump
 docker compose exec -T postgres pg_restore --list < silo-$(date +%F).dump > /dev/null && echo "backup is readable"
+
+# Keep a copy of your settings file
 cp .env silo-env-$(date +%F).backup && chmod 600 silo-env-$(date +%F).backup
 ```
 
-Change `silo` after `-U` and after `-Fc` if you set a different
-`POSTGRES_USER` or `POSTGRES_DB`.
+The build number also appears in Silo's admin sidebar.
 
 Unraid, using the official template names:
 
 ```sh
-docker exec Silo-PostgreSQL pg_dump -U silo -Fc silo > /mnt/user/backups/silo-$(date +%F).dump
+mkdir -p /mnt/user/backups
+docker exec Silo-PostgreSQL sh -c 'pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB"' > /mnt/user/backups/silo-$(date +%F).dump
 ```
 
 Then copy your `SECRET_KEY` somewhere safe. On Unraid it is a variable in the
-Silo container settings. **Without the same `SECRET_KEY`, a restored database
-cannot decrypt its stored passwords and API keys.** Keep the key separate from
+Silo container settings. **Without the same `SECRET_KEY`, Silo refuses to start on a
+restored database.** Keep the key separate from
 the dump.
 
 The skill's [backup guide](skills/silo-troubleshooting/references/backups-and-upgrades.md)
@@ -145,23 +150,26 @@ Example prompts:
 ### What the agent will do
 
 1. Ask how Silo is installed and what changed recently.
-2. Run a read-only snapshot script that collects container status, health
-   checks, database and Redis reachability, mounts, GPU devices, disk space,
-   and recent errors. It masks passwords and tokens in log lines.
+2. Run a read-only snapshot script that collects container status, the
+   running build, Compose file errors, health checks, database and Redis
+   reachability, mounts, GPU devices, disk space, and recent errors. It masks
+   passwords and tokens in log lines.
 3. Read the part of the guide that matches your problem and check the
    evidence.
 4. Explain what it found, citing the log lines or output.
 5. For each fix, show the exact command or setting, explain the risk and how
    to undo it, and wait for your yes. Before the first change it asks whether
    you have a backup.
-6. Leave the destructive steps (restoring a database, deleting data,
-   rolling back migrations) for you to run yourself.
+6. Leave the destructive steps (restoring a database, deleting or moving
+   data, running or rolling back migrations, SQL that writes) for you to run
+   yourself, even if you approve them.
 7. If the problem looks like a Silo bug, draft a bug report for you to review
    and file.
 
 ### What it will not do
 
-- Show your `SECRET_KEY`, passwords, or tokens in the conversation.
+- Show your `SECRET_KEY`, passwords, or tokens in the conversation, or ask
+  you to paste them.
 - Generate a new `SECRET_KEY` for an existing install, hand-edit the
   database, or delete migration files.
 - File issues or post anywhere on your behalf.

@@ -45,13 +45,22 @@ autoscan sources) stops working.
 3. Disable the plugin, restart Silo, and confirm the rest of the server works.
 4. Reinstall the plugin from the catalog.
 
-If Silo will not start because of a plugin (`preload enabled plugins`),
-disabling it from the admin UI is not possible. Tell the user to report it
-with the log lines (see `reporting-issues.md`). If this started right after an
-upgrade and they need the server back now, follow the rollback steps in
-`backups-and-upgrades.md` (restore the pre-upgrade dump, then start the old
-image). Do not delete rows from
-the plugin tables.
+If Silo will not start because of a plugin (`preload enabled plugins: ...`),
+read the wrapped error first. Silo keeps each plugin's files in the plugin
+cache and rebuilds them from the database when they are missing or damaged,
+so the usual causes are on the host:
+
+- The disk holding the plugin cache is full (`df -h`).
+- The cache directory is not writable, or mounted read-only
+  (`/opt/silo/plugins` with Compose, `/mnt/user/appdata/silo/plugins` on
+  Unraid).
+
+With Silo stopped, moving the plugin cache directory aside (renaming it, not
+deleting it) is reversible, and Silo rebuilds it at the next start. Moving
+data directories is a step the user runs in their own terminal; show them the
+commands. If the error persists, report it with
+the log lines (see `reporting-issues.md`). Do not delete rows from the plugin
+tables.
 
 ## Do not
 

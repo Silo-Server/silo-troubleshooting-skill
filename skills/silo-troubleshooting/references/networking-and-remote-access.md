@@ -75,6 +75,12 @@ location / {
 }
 ```
 
+Behind a second TLS terminator (Cloudflare, a load balancer, a tunnel), Nginx's
+`$scheme` is `http`. In that case pass the original header through once
+(`proxy_set_header X-Forwarded-Proto https;` or the value from the outer
+proxy), never both. In Nginx Proxy Manager, turn on **Websockets Support** for
+the proxy host.
+
 ## Silo settings that must match the proxy
 
 - **Silo public URL** (`server.public_url`, **Admin > Settings > General**):
@@ -94,9 +100,9 @@ location / {
     on it.
   - Wrong trust makes remote clients look local (or the reverse), which
     changes whether Silo classifies a stream as local or remote.
-- **Jellyfin public URL** (`jellyfin_compat.public_url`, **Admin > Settings >
-  Compatibility & Proxies**) if Jellyfin clients connect through a different
-  hostname or port.
+- **Address Jellyfin apps should use** (`jellyfin_compat.public_url`,
+  **Admin > Settings > Compatibility**) if Jellyfin clients connect through a
+  different hostname or port.
 
 Some settings only apply after a restart. The admin UI shows a restart banner
 and marks those fields; `GET /api/v2/admin/server/status` reports
@@ -106,7 +112,9 @@ and marks those fields; `GET /api/v2/admin/server/status` reports
 
 - Native Silo apps and Jellyfin-compatible apps need the URL they can actually
   reach, including `https://` and a non-default port if one is used.
-- Jellyfin clients connect to port `8096` (or `JF_PORT`), not `8090`.
+- Jellyfin clients connect to port `8096` (or `JF_PORT`), not `8090`. If
+  Jellyfin itself still runs on the same machine, it holds port 8096 and Silo
+  cannot start its listener (`port is already allocated`).
 - Turning on Jellyfin compatibility needs a restart. `GET
   /api/v2/compat/connect-info` returns `pending_restart: true` until then.
 - Overlay networks (Tailscale-style network-access plugins) are managed under

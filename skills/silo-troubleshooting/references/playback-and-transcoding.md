@@ -50,7 +50,7 @@ sessions.
 Probe it from inside the container:
 
 ```sh
-docker compose exec silo ffprobe -v error -show_entries \
+docker compose exec silo /usr/lib/jellyfin-ffmpeg/ffprobe -v error -show_entries \
   stream=index,codec_type,codec_name,profile,width,height,pix_fmt,channels:format=duration,bit_rate \
   -of compact "/mnt/media/Movies/Film (2020)/Film (2020).mkv"
 ```
@@ -86,20 +86,34 @@ Failure reasons shown there or in the logs include
    `docker compose up -d`. On Unraid, add `--device=/dev/dri:/dev/dri` to
    **Extra Parameters** (not an empty Device entry).
 3. Check inside the container: `docker compose exec silo ls -l /dev/dri`.
-4. Restart Silo, then press the node's re-probe button ("Re-probe hardware")
-   on **Admin > Nodes**, or call `POST /api/v2/admin/nodes/{id}/reprobe`. A reprobe is refused while
-   that node is transcoding.
+4. Restart Silo, then use the node's re-probe icon button on **Admin > Nodes**
+   (its tooltip reads "Re-verify this node's hardware against live devices"),
+   or call `POST /api/v2/admin/nodes/{id}/reprobe`. A re-probe is refused
+   while that node is transcoding.
 
 Inside an LXC container (Proxmox), `/dev/dri` must also be passed into the
 LXC, and the device permissions must allow access from inside it.
 
 ### NVIDIA (NVENC)
 
+Docker Compose:
+
 1. Install the NVIDIA driver and the NVIDIA Container Toolkit on the host.
 2. Use `COMPOSE_FILE=docker-compose.yml:docker-compose.nvidia.yml` and set
    `NVIDIA_GPU_COUNT`.
 3. Check: `docker compose exec silo nvidia-smi`. If that fails, the problem is
    the host's driver or toolkit, not Silo.
+4. If `nvidia-smi` works but NVENC still fails, the container may lack the
+   driver's video capability. Add `NVIDIA_DRIVER_CAPABILITIES:
+   compute,video,utility` to the `silo` service's environment in an override
+   file, then recreate the container.
+
+Unraid:
+
+1. Install the **Nvidia-Driver** plugin and reboot if prompted.
+2. Edit the Silo container with **Advanced View** on, add `--runtime=nvidia`
+   to **Extra Parameters**, and enter the GPU UUID (or `all`) in **NVIDIA GPU
+   UUID**. Leave `NVIDIA_DRIVER_CAPABILITIES` at `compute,video,utility`.
 
 The NVIDIA driver caps concurrent encode sessions on consumer cards. Past that
 cap, new transcodes fail even though the card has headroom.
@@ -130,8 +144,8 @@ Only relevant when the user runs separate `proxy` or `transcode` containers.
   that node's `NODE_NAME` to match.
 - Health checks run every 30 seconds. `stream node unhealthy` in the logs names
   the node. Existing streams move to a healthy node at their next segment.
-- **Stale** on **Admin > Nodes** means no capability report for over 10
-  minutes. **Drift** means the node's hardware got worse since it was last
+- **Stale** in a node's Acceleration block means no health check has
+  confirmed that hardware inventory for about 10 minutes. **Drift** means the node's hardware got worse since it was last
   seen (for example it lost its GPU).
 - Scratch disk: nodes at 95% or more of their transcode volume stop receiving
   new transcodes. `transcode scratch guard ignored: every eligible node is over
