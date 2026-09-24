@@ -199,6 +199,6 @@ Silo version and what you saw. Keep the safety rules intact.
 
 ## License
 
-[GNU Affero General Public License v3.0](LICENSE), the same license as Silo.
+[MIT](LICENSE).
 As the license says, this software comes with no warranty. You are
 responsible for what you allow an AI agent to run on your systems.
