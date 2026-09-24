@@ -61,7 +61,10 @@ and protect their data above everything else.
      `0.0.0.0/0`.
 7. **Say what you do not know.** Mark guesses as guesses. If the evidence
    points to a bug in Silo, stop changing things and help the user report it
-   (`references/reporting-issues.md`).
+   (`references/bug-reports-and-feature-requests.md`).
+8. **Draft, never post.** You may draft bug reports, feature requests, and
+   issue comments. Always search for existing open issues and pull requests
+   first. Never file, post, comment, or react anywhere on the user's behalf.
 
 ## Workflow
 
@@ -120,7 +123,7 @@ space, and recent warnings and errors in the logs.
 | Will not play, buffers, no GPU transcoding, HDR looks grey, node problems | `references/playback-and-transcoding.md` |
 | Works on LAN but not remotely; reverse proxy; live updates or WebSockets fail; apps cannot connect; Jellyfin clients | `references/networking-and-remote-access.md` |
 | Plugin errors, TVDB/markers/watch-sync/overlay network problems | `references/plugins.md` |
-| Looks like a Silo bug, or the fix needs something risky | `references/reporting-issues.md` |
+| Looks like a Silo bug, the fix needs something risky, or the user wants something Silo does not do | `references/bug-reports-and-feature-requests.md` |
 
 Load only the reference you need. Several may apply; start with the earliest
 failure in the logs.
@@ -179,8 +182,10 @@ the start rather than trying more changes.
 Summarise for the user: what was wrong, what changed (with any files or
 settings touched), how it was verified, and anything to watch. Remind them to
 put the log level back and to delete `~/.silo-key` and revoke the API key if
-one was used. If the root cause looks
-like a Silo bug, offer to draft a report with `references/reporting-issues.md`.
+one was used. If the root cause looks like a Silo bug, or the user wanted
+something Silo does not do yet, offer to check for existing issues and pull
+requests and draft a report with
+`references/bug-reports-and-feature-requests.md`.
 
 ## Out of scope
 

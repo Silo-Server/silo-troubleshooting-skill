@@ -59,7 +59,7 @@ With Silo stopped, moving the plugin cache directory aside (renaming it, not
 deleting it) is reversible, and Silo rebuilds it at the next start. Moving
 data directories is a step the user runs in their own terminal; show them the
 commands. If the error persists, report it with
-the log lines (see `reporting-issues.md`). Do not delete rows from the plugin
+the log lines (see `bug-reports-and-feature-requests.md`). Do not delete rows from the plugin
 tables.
 
 ## Do not

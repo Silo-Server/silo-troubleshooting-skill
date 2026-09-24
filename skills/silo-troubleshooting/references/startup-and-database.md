@@ -92,7 +92,7 @@ curl -fsS http://localhost:8090/api/v1/ready    # plus PostgreSQL (and S3 if con
   copy. Check `df -h` on the PostgreSQL data path.
 - Data-integrity migrations can refuse to apply when they find orphaned rows,
   and roll themselves back. The error names the table. Stop and help the user
-  report it (see `reporting-issues.md`). Do not delete rows to get past it.
+  report it (see `bug-reports-and-feature-requests.md`). Do not delete rows to get past it.
 - To list applied migrations when no migration is running:
 
   ```sh

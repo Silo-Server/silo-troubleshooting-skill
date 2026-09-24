@@ -27,7 +27,8 @@ then works through the problem with you in your own terminal.
 - Reverse proxies, remote access, apps that cannot connect, Jellyfin clients
 - Plugin errors
 - Safe upgrades and rollbacks
-- Drafting a good bug report when the problem is in Silo itself
+- Drafting bug reports and feature requests, after checking that no open
+  issue or pull request already covers them
 
 It supports Docker Compose (the standard install), Unraid, and plain Docker.
 Kubernetes and other setups work too, but the agent has to adapt the commands.
@@ -71,13 +72,6 @@ Inside Claude Code:
 
 Run `/reload-plugins` if Claude Code asks you to. `/plugin marketplace update
 silo` pulls in later updates.
-
-> [!NOTE]
-> This repository is private for now, so only accounts with access to it can
-> install it. Claude Code uses your own git credentials. `owner/repo`
-> shorthand clones over SSH. If you sign in to GitHub over HTTPS with the `gh`
-> CLI instead, run `gh auth setup-git` once and start Claude Code with
-> `CLAUDE_CODE_PLUGIN_PREFER_HTTPS=1`.
 
 ### Claude Code: manual
 
@@ -145,8 +139,11 @@ Example prompts:
 6. Leave the destructive steps (restoring a database, deleting or moving
    data, running or rolling back migrations, SQL that writes) for you to run
    yourself, even if you approve them.
-7. If the problem looks like a Silo bug, draft a bug report for you to review
-   and file.
+7. If the problem looks like a Silo bug, or you want something Silo does not
+   do yet, search Silo's open issues and pull requests first. If one exists,
+   it gives you the link (and drafts a comment if you have something to add).
+   If not, it drafts a bug report or feature request for you to paste wherever
+   you choose.
 
 ### What it will not do
 
@@ -154,7 +151,7 @@ Example prompts:
   you to paste them.
 - Generate a new `SECRET_KEY` for an existing install, hand-edit the
   database, or delete migration files.
-- File issues or post anywhere on your behalf.
+- File issues, comment, or post anywhere on your behalf.
 - Help with Live TV, IPTV, DVR, or `.strm` remote streams. Silo does not
   support those.
 
