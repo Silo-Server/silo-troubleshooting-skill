@@ -8,24 +8,30 @@
 #   silo-snapshot.sh                      # Docker Compose; run from the directory with docker-compose.yml
 #   silo-snapshot.sh --container Silo     # plain Docker / Unraid; give the Silo container name
 #   silo-snapshot.sh --port 8090          # host port for the health checks (default: PORT from .env, else 8090)
-#   silo-snapshot.sh --lines 300          # how many recent log lines to scan (default 400)
+#   silo-snapshot.sh --lines 300          # how many recent log lines to show errors from (default 400)
+#   silo-snapshot.sh --since 24h          # window for the message-frequency summary (default 6h)
+#
+# On another machine, pipe it over SSH (the script reads nothing else from stdin):
+#   ssh user@host 'cd /path/to/compose/dir && bash -s -- --since 24h' < silo-snapshot.sh
 
 set -u
 
 container=""
 port=""
 lines=400
+since=6h
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --container|--port|--lines)
+    --container|--port|--lines|--since)
       if [ $# -lt 2 ] || [ -z "$2" ]; then echo "$1 needs a value" >&2; exit 2; fi ;;
   esac
   case "$1" in
     --container) container="$2"; shift 2 ;;
     --port) port="$2"; shift 2 ;;
     --lines) lines="$2"; shift 2 ;;
-    -h|--help) sed -n '2,11p' "$0"; exit 0 ;;
+    --since) since="$2"; shift 2 ;;
+    -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -76,10 +82,12 @@ else
 fi
 
 silo_exec() {
-  if [ "$mode" = compose ]; then docker compose exec -T silo "$@"; else docker exec "$container" "$@"; fi
+  # </dev/null: when this script is piped to `bash -s`, exec would otherwise
+  # swallow the rest of the script from stdin.
+  if [ "$mode" = compose ]; then docker compose exec -T silo "$@" </dev/null; else docker exec "$container" "$@" </dev/null; fi
 }
 silo_logs() {
-  if [ "$mode" = compose ]; then docker compose logs --no-color --tail "$lines" silo 2>&1; else docker logs --tail "$lines" "$container" 2>&1; fi
+  if [ "$mode" = compose ]; then docker compose logs --no-color "$@" silo 2>&1; else docker logs "$@" "$container" 2>&1; fi
 }
 
 [ -n "$port" ] || port="$(env_value PORT)"
@@ -141,18 +149,18 @@ fi
 section "PostgreSQL and Redis"
 if [ "$mode" = compose ]; then
   if [ -n "$(docker compose ps -q postgres 2>/dev/null)" ]; then
-    docker compose exec -T postgres pg_isready 2>&1
+    docker compose exec -T postgres pg_isready </dev/null 2>&1
   else
     echo "no running bundled postgres service (external database, or it is stopped)"
   fi
   if [ -n "$(docker compose ps -q redis 2>/dev/null)" ]; then
-    printf 'redis: '; docker compose exec -T redis redis-cli ping 2>&1
+    printf 'redis: '; docker compose exec -T redis redis-cli ping </dev/null 2>&1
   else
     echo "no running bundled redis service (external Redis, or it is stopped)"
   fi
 else
   if docker ps --format '{{.Names}}' | grep -qx 'Silo-PostgreSQL'; then
-    docker exec Silo-PostgreSQL pg_isready 2>&1
+    docker exec Silo-PostgreSQL pg_isready </dev/null 2>&1
   else
     echo "no running container named Silo-PostgreSQL; check the database container by hand"
   fi
@@ -189,11 +197,19 @@ else
   docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}' "$container" 2>/dev/null
 fi
 
+section "Most frequent warning and error messages, last $since"
+# Works for both text (level=WARN msg="...") and JSON ("level":"WARN","msg":"...") logs.
+silo_logs --since "$since" \
+  | grep -E 'level=(WARN|ERROR)|"level":"(WARN|ERROR)"' \
+  | sed -nE 's/.*level=(WARN|ERROR).* msg=("[^"]*"|[^ ]+).*/\1 \2/p; s/.*"level":"(WARN|ERROR)".*"msg":("[^"]*").*/\1 \2/p' \
+  | sort | uniq -c | sort -rn | head -n 25 | redact
+echo "(counts; drill into one with: docker compose logs --since $since silo | grep -F '<message>')"
+
 section "Warnings and errors in the last $lines log lines (redacted)"
-silo_logs | grep -iE 'level=(warn|error)|"level":"(warn|error)"|fatal|panic|failed|unreachable|refus|denied|required|bootstrap:|database pool:|loading settings:|log stream hub' | redact | tail -n 80
+silo_logs --tail "$lines" | grep -iE 'level=(warn|error)|"level":"(warn|error)"|fatal|panic|failed|unreachable|refus|denied|required|bootstrap:|database pool:|loading settings:|log stream hub' | redact | tail -n 80
 
 section "Last 30 log lines (redacted)"
-silo_logs | tail -n 30 | redact
+silo_logs --tail 30 | redact
 
 echo
 echo "Snapshot finished. Review it for anything private before sharing it outside this machine."

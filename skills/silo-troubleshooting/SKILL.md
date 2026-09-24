@@ -105,9 +105,32 @@ Run the bundled read-only script from the Compose directory (or with
 ```sh
 bash <skill-dir>/scripts/silo-snapshot.sh
 bash <skill-dir>/scripts/silo-snapshot.sh --container Silo --port 8090
+bash <skill-dir>/scripts/silo-snapshot.sh --since 24h   # widen the log summary window
 ```
 
-`<skill-dir>` is the directory containing this `SKILL.md`. If the script
+`<skill-dir>` is the directory containing this `SKILL.md`. The script includes
+a count of the most frequent warning and error messages over `--since`
+(default 6h); start from that list instead of paging through raw logs.
+
+If Silo runs on another machine the user can reach over SSH, pipe the script
+there instead of copying it:
+
+```sh
+ssh user@host 'cd /path/to/compose/dir && bash -s -- --since 6h' < <skill-dir>/scripts/silo-snapshot.sh
+```
+
+When PostgreSQL or Redis run on a different host from Silo, the snapshot
+reports them as "no running bundled service". Check them on their own host
+with the read-only commands in `references/startup-and-database.md`. For SQL
+over SSH, send the query on stdin so shell quoting cannot mangle it:
+
+```sh
+ssh user@dbhost 'cd /path/to/compose/dir && docker compose exec -T postgres psql -U silo -d silo -At' <<'SQL'
+select count(*), state from pg_stat_activity where datname = current_database() group by state;
+SQL
+```
+
+If the script
 cannot run (no bash, Kubernetes), gather the same facts by hand: container
 status and restart count, image tag, `/api/v1/health` and `/api/v1/ready`,
 PostgreSQL and Redis reachability, media mount contents, `/dev/dri`, disk
