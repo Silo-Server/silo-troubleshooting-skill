@@ -81,6 +81,8 @@ Ask, or detect from the shell, and record the answers:
 - Silo version: the build shown in the admin sidebar. `docker compose images
   silo` only shows the tag, which is often just `latest`.
 - Single server or separate `proxy`/`transcode` nodes; GPU type if any.
+- If only some people are affected, which account and profile (by display
+  name), so you can match them in the logs instead of guessing.
 - What broke, since when, and what changed just before (upgrade, reboot, new
   disk, new proxy, settings change).
 
