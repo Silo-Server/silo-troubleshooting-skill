@@ -12,9 +12,9 @@ then works through the problem with you in your own terminal.
 >
 > This skill tells the agent to stay read-only until you approve each change,
 > and to leave destructive commands for you to run yourself. AI agents still
-> make mistakes, misread output, and sometimes ignore instructions. You are
-> the one approving commands on your own machine. Back up first, read every
-> command before you approve it, and say no when you are not sure.
+> make mistakes, misread output, and sometimes ignore instructions. It is your
+> machine and your data. Back up first, read what the agent proposes, and say
+> no when you are not sure.
 >
 > Provided as is, with no warranty (see [License](#license)).
 
@@ -104,10 +104,18 @@ follow that file. The other files it needs are in the same folder.
 1. Open a terminal on the machine that runs Silo. If Silo runs in Docker
    Compose, `cd` into the directory with its `docker-compose.yml`.
 2. Start your agent there (`claude` or `codex`).
-3. **Keep approvals on.** Do not start the agent in a mode that skips
-   permission prompts (Claude Code's `--dangerously-skip-permissions` or bypass
-   mode, or Codex's `--yolo` or full-auto modes). You want to see and approve
-   every command.
+3. **Pick a permission mode.** Auto mode works well for this. A separate
+   reviewer model checks each action, and the skill still asks you before
+   every change and leaves destructive steps for you to run yourself.
+   - Claude Code: auto mode (`claude --permission-mode auto`, or Shift+Tab
+     during a session). It is already the default on Pro, Max, and Team plans.
+   - Codex: automatic review (`codex --approve-for-me`).
+
+   If you would rather approve every command yourself, use manual approval
+   instead: `claude --permission-mode manual`, or Codex's default approval
+   prompts. Avoid the modes that skip all checks (Claude Code's
+   `--dangerously-skip-permissions`, Codex's
+   `--dangerously-bypass-approvals-and-sandbox`).
 4. Describe the problem in plain words. The skill loads automatically when
    you mention Silo. To call it explicitly, use
    `/silo-troubleshooting:silo-troubleshooting` (Claude Code plugin),
