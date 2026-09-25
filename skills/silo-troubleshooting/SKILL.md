@@ -57,8 +57,8 @@ and protect their data above everything else.
    - Run `goose fix`, or edit, rename, or delete migration files.
    - Restart a container while a migration is running.
    - Delete rows or tables to get past an error.
-   - Expose PostgreSQL or Redis to the internet, or set trusted proxies to
-     `0.0.0.0/0`.
+   - Expose PostgreSQL, Redis, or Silo's metrics or profiling listeners to
+     the internet, or set trusted proxies to `0.0.0.0/0`.
 7. **Say what you do not know.** Mark guesses as guesses. If the evidence
    points to a bug in Silo, stop changing things and help the user report it
    (`references/bug-reports-and-feature-requests.md`).
@@ -148,6 +148,7 @@ space, and recent warnings and errors in the logs.
 | Will not play, buffers, no GPU transcoding, HDR looks grey, node problems | `references/playback-and-transcoding.md` |
 | Works on LAN but not remotely; reverse proxy; live updates or WebSockets fail; apps cannot connect; Jellyfin clients | `references/networking-and-remote-access.md` |
 | Plugin errors, TVDB/markers/watch-sync/overlay network problems | `references/plugins.md` |
+| Keeps coming back or cannot be caught in the act: slowdowns, memory growth, OOM restarts, CPU spikes, hangs, stuck background work; the user wants monitoring | `references/metrics-and-profiling.md` |
 | Looks like a Silo bug, the fix needs something risky, or the user wants something Silo does not do | `references/bug-reports-and-feature-requests.md` |
 
 Load only the reference you need. Several may apply; start with the earliest
@@ -187,6 +188,9 @@ failure in the logs.
   `/api/v2/admin/server/status` (restart required, and why),
   `/api/v2/admin/logs/app?level=error`, `/api/v2/admin/nodes`,
   `/api/v2/admin/system/hw-accel`. When done, the user deletes `~/.silo-key` and revokes the key.
+- If the user has enabled Silo's optional metrics or profiling listeners
+  (`SILO_METRICS_LISTEN`, `SILO_DEBUG_LISTEN`), read them from inside the
+  container; see `references/metrics-and-profiling.md`.
 
 ### 5. Fix
 
@@ -207,7 +211,15 @@ the start rather than trying more changes.
 Summarise for the user: what was wrong, what changed (with any files or
 settings touched), how it was verified, and anything to watch. Remind them to
 put the log level back and to delete `~/.silo-key` and revoke the API key if
-one was used. If the root cause looks like a Silo bug, or the user wanted
+one was used.
+
+If the problem is recurring or intermittent and the cause is still unclear,
+and Silo's metrics and profiling listeners are off, tell the user about them.
+They will not explain what already happened, but they leave evidence for the
+next occurrence. Offer to give the steps or to enable them yourself, following
+`references/metrics-and-profiling.md`.
+
+If the root cause looks like a Silo bug, or the user wanted
 something Silo does not do yet, offer to check for existing issues and pull
 requests and draft a report with
 `references/bug-reports-and-feature-requests.md`.
