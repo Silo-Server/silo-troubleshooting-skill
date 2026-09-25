@@ -23,6 +23,8 @@ then works through the problem with you in your own terminal.
 - Silo will not start, keeps restarting, or shows as `unhealthy`
 - Database, Redis, or S3 storage errors
 - Media not showing up, wrong matches, missing artwork
+- Search problems, including checking that the optional Meilisearch engine
+  is connected and that its index builds
 - Playback failures, buffering, hardware transcoding (Intel, AMD, NVIDIA)
 - Reverse proxies, remote access, apps that cannot connect, Jellyfin clients
 - Plugin errors
@@ -141,8 +143,8 @@ Example prompts:
 1. Ask how Silo is installed and what changed recently.
 2. Run a read-only snapshot script that collects container status, the
    running build, Compose file errors, health checks, database and Redis
-   reachability, mounts, GPU devices, disk space, and recent errors. It masks
-   passwords and tokens in log lines.
+   reachability, Meilisearch health if you run it, mounts, GPU devices, disk
+   space, and recent errors. It masks passwords and tokens in log lines.
 3. Read the part of the guide that matches your problem and check the
    evidence.
 4. Explain what it found, citing the log lines or output.

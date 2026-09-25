@@ -45,8 +45,8 @@ redact() {
     -e 's#(postgres(ql)?|rediss?)://[^@/[:space:]]+@#\1://[REDACTED]@#g' \
     -e 's#([Bb][Ee][Aa][Rr][Ee][Rr] )[A-Za-z0-9._~+/=-]+#\1[REDACTED]#g' \
     -e 's#sa_[A-Za-z0-9_-]{8,}#sa_[REDACTED]#g' \
-    -e 's#([A-Za-z_-]*([Ss][Ee][Cc][Rr][Ee][Tt]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Tt][Oo][Kk][Ee][Nn]|[Aa][Pp][Ii]_?[Kk][Ee][Yy])[A-Za-z_-]*=)("?)[^[:space:]",&]+#\1\3[REDACTED]#g' \
-    -e 's#([A-Za-z_-]*([Ss][Ee][Cc][Rr][Ee][Tt]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Tt][Oo][Kk][Ee][Nn]|[Aa][Pp][Ii]_?[Kk][Ee][Yy])[A-Za-z_-]*"[[:space:]]*:[[:space:]]*")[^"]+#\1[REDACTED]#g'
+    -e 's#([A-Za-z_-]*([Ss][Ee][Cc][Rr][Ee][Tt]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Tt][Oo][Kk][Ee][Nn]|[Aa][Pp][Ii]_?[Kk][Ee][Yy]|[Mm][Aa][Ss][Tt][Ee][Rr]_?[Kk][Ee][Yy])[A-Za-z_-]*=)("?)[^[:space:]",&]+#\1\3[REDACTED]#g' \
+    -e 's#([A-Za-z_-]*([Ss][Ee][Cc][Rr][Ee][Tt]|[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Tt][Oo][Kk][Ee][Nn]|[Aa][Pp][Ii]_?[Kk][Ee][Yy]|[Mm][Aa][Ss][Tt][Ee][Rr]_?[Kk][Ee][Yy])[A-Za-z_-]*"[[:space:]]*:[[:space:]]*")[^"]+#\1[REDACTED]#g'
 }
 
 # Read one non-secret key from .env without sourcing the file.
@@ -129,11 +129,12 @@ fi
 
 section "Non-secret settings from .env"
 if [ "$mode" = compose ] && [ -f .env ]; then
-  for k in SILO_IMAGE MEDIA_ROOT MEDIA_CONTAINER_ROOT SILO_DATA_ROOT PORT JF_PORT ABS_PORT COMPOSE_FILE POSTGRES_TUNE SILO_MIGRATE_TIMEOUT; do
+  for k in SILO_IMAGE MEDIA_ROOT MEDIA_CONTAINER_ROOT SILO_DATA_ROOT PORT JF_PORT ABS_PORT COMPOSE_FILE COMPOSE_PROFILES POSTGRES_TUNE SILO_MIGRATE_TIMEOUT MEILISEARCH_IMAGE MEILISEARCH_HOST MEILISEARCH_PORT; do
     v="$(env_value "$k")"
     [ -n "$v" ] && echo "$k=$v"
   done
   if grep -qE '^[[:space:]]*SECRET_KEY=.+' .env; then echo "SECRET_KEY is set (value not shown)"; else echo "SECRET_KEY is NOT set in .env"; fi
+  grep -qE '^[[:space:]]*MEILI_MASTER_KEY=.+' .env && echo "MEILI_MASTER_KEY is set (value not shown)"
 else
   echo "(skipped: no .env in this directory, or plain Docker mode)"
 fi
@@ -166,6 +167,34 @@ else
   fi
   echo "Redis: check it with: docker exec <redis-container> redis-cli ping"
 fi
+
+section "Meilisearch (optional search engine)"
+meili=""
+if [ "$mode" = compose ]; then
+  # Match the service by Compose label so the result does not depend on which
+  # profiles are active in this shell (Meilisearch runs under `search`).
+  project=""
+  [ -n "$cid" ] && project="$(docker inspect --format '{{index .Config.Labels "com.docker.compose.project"}}' "$cid" 2>/dev/null)"
+  [ -n "$project" ] && meili="$(docker ps -a -q --filter "label=com.docker.compose.project=$project" --filter label=com.docker.compose.service=meilisearch | head -n 1)"
+else
+  meili="$(docker ps -a --format '{{.ID}} {{.Image}}' | awk '$2 ~ /meilisearch/ { print $1; exit }')"
+fi
+if [ -z "$meili" ]; then
+  echo "no Meilisearch container found (Silo uses PostgreSQL search unless it points at a Meilisearch elsewhere)"
+else
+  meili_name="$(docker inspect --format '{{.Name}}' "$meili" 2>/dev/null | sed 's#^/##')"
+  docker inspect --format 'container={{.Name}} image={{.Config.Image}} state={{.State.Status}} restarts={{.RestartCount}} exit_code={{.State.ExitCode}} started={{.State.StartedAt}}' "$meili" | sed 's#container=/#container=#'
+  if [ "$(docker inspect --format '{{.State.Running}}' "$meili" 2>/dev/null)" = true ]; then
+    printf 'health inside its own container: '; docker exec "$meili" curl -sS -m 5 http://127.0.0.1:7700/health </dev/null 2>&1; echo
+    meili_url="http://meilisearch:7700"
+    [ "$mode" = compose ] || meili_url="http://${meili_name}:7700"
+    printf 'reachable from Silo at %s: ' "$meili_url"; silo_exec curl -sS -m 5 "$meili_url/health" 2>&1; echo
+    [ "$mode" = compose ] || echo "  (a container name only resolves on a shared Docker network; compare with the URL set in Silo)"
+  fi
+  echo "warnings and errors, last $since:"
+  docker logs --since "$since" "$meili" 2>&1 | grep -E 'WARN|ERROR|required|incompatible' | tail -n 15 | redact
+fi
+echo "(Silo's own view: Admin > Settings > Library & Metadata > Search status)"
 
 section "Inside the Silo container"
 media_root="$(env_value MEDIA_CONTAINER_ROOT)"
