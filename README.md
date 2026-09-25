@@ -27,6 +27,11 @@ then works through the problem with you in your own terminal.
 - Reverse proxies, remote access, apps that cannot connect, Jellyfin clients
 - Plugin errors
 - Safe upgrades and rollbacks
+- Problems that keep coming back, such as slowdowns, memory growth, or
+  crashes. The agent can help you turn on Silo's optional
+  [metrics](https://github.com/Silo-Server/silo-server/blob/main/docs/operations/monitoring.md)
+  and [profiling](https://github.com/Silo-Server/silo-server/blob/main/docs/operations/profiling.md)
+  endpoints, so the next occurrence leaves evidence
 - Drafting bug reports and feature requests, after checking that no open
   issue or pull request already covers them
 
@@ -147,7 +152,11 @@ Example prompts:
 6. Leave the destructive steps (restoring a database, deleting or moving
    data, running or rolling back migrations, SQL that writes) for you to run
    yourself, even if you approve them.
-7. If the problem looks like a Silo bug, or you want something Silo does not
+7. If the problem keeps coming back and the cause is still unclear, tell you
+   about Silo's metrics and profiling endpoints. It offers to turn them on
+   for you or gives you the steps. They cannot explain an incident that has
+   already happened, but they record the next one.
+8. If the problem looks like a Silo bug, or you want something Silo does not
    do yet, search Silo's open issues and pull requests first. If one exists,
    it gives you the link (and drafts a comment if you have something to add).
    If not, it drafts a bug report or feature request for you to paste wherever
