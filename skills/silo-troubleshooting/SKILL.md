@@ -1,6 +1,6 @@
 ---
 name: silo-troubleshooting
-description: Diagnose and safely fix a self-hosted Silo media server (Docker Compose, Unraid, or plain Docker). Use when the user's Silo server will not start, is unhealthy, fails to scan or match media, will not play or transcode, cannot be reached remotely, has plugin or GPU problems, or needs an upgrade or rollback. Not for developing Silo itself.
+description: Diagnose and safely fix a self-hosted Silo media server (Docker Compose, Unraid, or plain Docker). Use when the user's Silo server will not start, is unhealthy, fails to scan or match media, has search or Meilisearch problems, will not play or transcode, cannot be reached remotely, has plugin or GPU problems, or needs an upgrade or rollback. Not for developing Silo itself.
 ---
 
 # Silo troubleshooting
@@ -37,11 +37,11 @@ and protect their data above everything else.
    the exact command, explain it, and let the user run it in their own
    terminal. Never chain these into a larger command.
 5. **Protect secrets.** Never print, echo, or copy into the conversation:
-   `SECRET_KEY`, passwords, `DATABASE_URL`, API keys, or tokens. Never ask the
-   user to paste one into the chat. Do not run `cat .env`,
-   `docker compose config`, `docker inspect` without `--format`, `env` or
-   `printenv` (on the host or inside a container), or read Unraid's container
-   templates (`/boot/config/plugins/dockerMan/templates-user/*.xml`, which
+   `SECRET_KEY`, passwords, `DATABASE_URL`, `MEILI_MASTER_KEY`, API keys, or
+   tokens. Never ask the user to paste one into the chat. Do not run
+   `cat .env`, `docker compose config`, `docker inspect` without `--format`,
+   `env` or `printenv` (on the host or inside a container), or read Unraid's
+   container templates (`/boot/config/plugins/dockerMan/templates-user/*.xml`, which
    store every variable in plain text). Safe checks:
    - One non-secret key: `grep '^MEDIA_ROOT=' .env`.
    - A secret exists: `grep -c '^SECRET_KEY=' .env`, or inside the container
@@ -57,8 +57,8 @@ and protect their data above everything else.
    - Run `goose fix`, or edit, rename, or delete migration files.
    - Restart a container while a migration is running.
    - Delete rows or tables to get past an error.
-   - Expose PostgreSQL, Redis, or Silo's metrics or profiling listeners to
-     the internet, or set trusted proxies to `0.0.0.0/0`.
+   - Expose PostgreSQL, Redis, Meilisearch, or Silo's metrics or profiling
+     listeners to the internet, or set trusted proxies to `0.0.0.0/0`.
 7. **Say what you do not know.** Mark guesses as guesses. If the evidence
    points to a bug in Silo, stop changing things and help the user report it
    (`references/bug-reports-and-feature-requests.md`).
@@ -132,11 +132,11 @@ select count(*), state from pg_stat_activity where datname = current_database() 
 SQL
 ```
 
-If the script
-cannot run (no bash, Kubernetes), gather the same facts by hand: container
-status and restart count, image tag, `/api/v1/health` and `/api/v1/ready`,
-PostgreSQL and Redis reachability, media mount contents, `/dev/dri`, disk
-space, and recent warnings and errors in the logs.
+If the script cannot run (no bash, Kubernetes), gather the same facts by
+hand: container status and restart count, image tag, `/api/v1/health` and
+`/api/v1/ready`, PostgreSQL and Redis reachability, Meilisearch health if it
+is used, media mount contents, `/dev/dri`, disk space, and recent warnings and
+errors in the logs.
 
 ### 3. Route by symptom
 
@@ -145,6 +145,7 @@ space, and recent warnings and errors in the logs.
 | Container exits, restarts in a loop, stays `unhealthy`; `ready` fails; database, Redis, or S3 errors | `references/startup-and-database.md` |
 | Upgrading, rolling back, or "it broke after an update" | `references/upgrades-and-rollback.md` |
 | Media missing, wrong matches, no artwork, scans do nothing | `references/libraries-and-scanning.md` |
+| Search results missing, stale, or slow; Search status warnings; Meilisearch not connecting or its index not building | `references/search-and-meilisearch.md` |
 | Will not play, buffers, no GPU transcoding, HDR looks grey, node problems | `references/playback-and-transcoding.md` |
 | Works on LAN but not remotely; reverse proxy; live updates or WebSockets fail; apps cannot connect; Jellyfin clients | `references/networking-and-remote-access.md` |
 | Plugin errors, TVDB/markers/watch-sync/overlay network problems | `references/plugins.md` |
@@ -187,7 +188,8 @@ failure in the logs.
   `/api/v2/admin/system/build`, `/api/v2/admin/system/resources`,
   `/api/v2/admin/server/status` (restart required, and why),
   `/api/v2/admin/logs/app?level=error`, `/api/v2/admin/nodes`,
-  `/api/v2/admin/system/hw-accel`. When done, the user deletes `~/.silo-key` and revokes the key.
+  `/api/v2/admin/system/hw-accel`, `/api/v2/admin/catalog/search/status`.
+  When done, the user deletes `~/.silo-key` and revokes the key.
 - If the user has enabled Silo's optional metrics or profiling listeners
   (`SILO_METRICS_LISTEN`, `SILO_DEBUG_LISTEN`), read them from inside the
   container; see `references/metrics-and-profiling.md`.
