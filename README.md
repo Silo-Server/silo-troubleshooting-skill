@@ -26,6 +26,7 @@ then works through the problem with you in your own terminal.
 - Search problems, including checking that the optional Meilisearch engine
   is connected and that its index builds
 - Playback failures, buffering, hardware transcoding (Intel, AMD, NVIDIA)
+- Missing chapter preview images
 - Reverse proxies, remote access, apps that cannot connect, Jellyfin clients
 - Plugin errors
 - Safe upgrades and rollbacks
