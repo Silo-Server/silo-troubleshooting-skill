@@ -175,8 +175,9 @@ The snapshot script already masks credentials in its output; copy the
 relevant parts into `evidence.md`, replacing any other private values as
 above.
 
-A comment on an existing issue follows the same path, limited to the facts
-the issue lacks.
+A comment on an existing bug report follows the same path, limited to the
+facts the issue lacks. A comment on a feature request follows the
+feature-request path below.
 
 ### Feature requests
 
@@ -313,7 +314,7 @@ Keep it short and limited to what the issue does not already say.
 ```markdown
 **Comment on:** <link to the issue>
 
-<What is new: a different build, new log lines, a reliable way to reproduce it, or a client the issue does not mention. Facts only, with the Silo build and, for an app, its version and device.>
+<What is new. On a bug report: a different build, new log lines, a reliable way to reproduce it, or a client the issue does not mention, with the Silo build and, for an app, its version and device. On a feature request: a use case the issue does not cover. Facts only.>
 
     <raw log lines, if any, redactions and omissions marked>
 
@@ -454,11 +455,11 @@ Show the user:
 - Which repository and issue form to use (Step 4), or, for a comment, the
   issue to post it on.
 
-For a bug or a comment, ask the user to confirm that they ran the steps
-themselves and that every fact matches their server. For a feature request, ask them to
-confirm that the problem and proposed behavior say what they mean. Then let
-them post it. Remind them that they can delete `<report_dir>` once the report
-is posted.
+For a bug or a comment on one, ask the user to confirm that they ran any
+reported steps themselves and that every fact matches their server. For a
+feature request or a comment on one, ask them to confirm that the problem and
+proposed behavior say what they mean. Then let them post it. Remind them that
+they can delete `<report_dir>` once the report is posted.
 
 ## Client diagnostics
 
