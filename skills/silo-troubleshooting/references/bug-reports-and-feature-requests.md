@@ -245,7 +245,7 @@ reference as separate fields; use the same facts under those headings.
 <SILO-… if the user sent one to Silo Diagnostics; otherwise leave empty.>
 
 ### Relevant logs
-    <raw log lines, redactions marked like [REDACTED-IP], omissions marked like [... 40 lines omitted ...]; or "no logs available">
+    <raw log lines, redactions marked like [PUBLIC-IP-1], omissions marked like [... 40 lines omitted ...]; or "no logs available">
 
 ### Technical notes
 <Your analysis: suspected cause, media details, related settings, what you ruled out. Label guesses as guesses.>
@@ -329,7 +329,10 @@ anything that slipped through, marking each change:
 
 - `SECRET_KEY`, database passwords, `DATABASE_URL`, API keys, access tokens,
   cookies, and `Authorization` headers.
-- Public hostnames, domain names, public IP addresses, and Tailscale names.
+- Public hostnames, domain names, and Tailscale names.
+- IP addresses, public or private. Use placeholders that keep the kind of
+  address, such as `[LAN-IP-1]`, `[TAILNET-IP-1]`, or `[PUBLIC-IP-1]`, because
+  whether a client was local, on a tailnet, or remote often matters.
 - Usernames and email addresses of household members.
 - Media file names and paths, if the user considers them private.
 
@@ -359,7 +362,7 @@ Run it with subagents:
 
 | Lens | Bug | Feature request | Comment |
 |---|---|---|---|
-| Evidence | yes | | yes |
+| Evidence | yes | yes | yes |
 | Reproducibility | yes | | |
 | Problem and scope | | yes | |
 | Privacy | yes | yes | yes |
@@ -408,12 +411,13 @@ Then add the lens:
   EPG/XMLTV guides, DVR, .strm remote-stream files); more than one request in
   one issue; and claims about what Silo does today that evidence.md does not
   support."
-- **Privacy**: "Find anything in the draft that should not be public:
-  secrets, tokens, passwords, API keys, cookies, Authorization headers,
-  connection strings, public hostnames and domains, public IP addresses,
-  Tailscale names, email addresses, household members' usernames, and media
-  titles or paths. Flag redactions that are not marked, and redactions that
-  removed something a maintainer needs; suggest a safe placeholder instead."
+- **Privacy**: "Find anything in the draft that should not be public: secrets,
+  tokens, passwords, API keys, cookies, Authorization headers, connection
+  strings, public hostnames and domains, IP addresses (public or private) not
+  replaced by a placeholder, Tailscale names, email addresses, household
+  members' usernames, and media titles or paths. Flag redactions that are not
+  marked, and redactions that removed something a maintainer needs; suggest a
+  safe placeholder instead."
 - **Duplicates**: "Try to show this is already reported or already fixed.
   Search open and recently closed issues and pull requests across the
   Silo-Server organization, using terms the draft does not use: distinctive

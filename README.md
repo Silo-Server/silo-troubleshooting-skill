@@ -177,10 +177,10 @@ Example prompts:
    subagents where the agent supports them, otherwise a self-review that the
    report discloses. For a bug, one checks every claim against the evidence,
    one checks that a maintainer could reproduce it, one looks for private
-   details, and one searches for an existing issue. A feature request gets a
-   problem-and-scope check, the privacy check, and the search. It fixes what
-   they find, asks you for anything only you can supply, and tells you which
-   repository to post it in. You post it yourself.
+   details, and one searches for an existing issue. A feature request gets the
+   evidence check, a problem-and-scope check, the privacy check, and the
+   search. It fixes what they find, asks you for anything only you can supply,
+   and tells you which repository to post it in. You post it yourself.
 
 ### What it will not do
 
