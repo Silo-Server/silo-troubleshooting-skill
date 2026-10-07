@@ -132,6 +132,75 @@ file, playback ends with "A lower-resolution source is required because 4K
 transcoding is disabled." Turn the setting on (and check the GPU can handle
 it), or add a 1080p version of the title.
 
+## Chapter previews missing
+
+Chapter menus work without thumbnails; this is only about the preview images
+on the seek bar and chapter list. They are stored in artwork storage, which is
+local disk on a default install. S3 is not required.
+
+1. **Is it switched on?** Under **Admin > Libraries**, edit the library and
+   check **Generate chapter thumbnails** in its advanced settings. If the
+   switch is greyed out, Silo has no artwork storage; check the storage
+   settings under **Admin > Settings > Storage & Database**.
+2. **Does the file have chapters?** Without chapter markers there is nothing to
+   generate:
+
+   ```sh
+   docker compose exec silo /usr/lib/jellyfin-ffmpeg/ffprobe -v error -show_chapters \
+     -of compact "/mnt/media/Movies/Film (2020)/Film (2020).mkv"
+   ```
+
+3. **Read the reason.** In **Admin > Logs**, filter by component
+   `chapterthumbs` and open a line to see its attributes. The default log
+   capture level (`info`) already includes every line below.
+
+| Log message and `reason` | Meaning and next step |
+|---|---|
+| `request skipped`, `folder_disabled` | The library switch is off, or the folder is disabled. |
+| `request skipped`, `no_chapters` | The file has no chapter markers. Nothing to fix in Silo. |
+| `request skipped`, `no_eligible_chapters` | Every chapter already has an image or is waiting to be retried. |
+| `request skipped`, `hdr_policy_disabled` | **Admin > Settings > Playback**, **HDR handling** is set to skip HDR and Dolby Vision, and this file needs tone mapping. |
+| `extract failed`, `tonemap_unsupported` | HDR source that could not be tone mapped. **Software HDR tone mapping** in the same group works without a GPU but is slow. |
+| `probe failed`, `probe_failed` | Silo could not read the chapter metadata. Treat it as a problem file (above). |
+| `extract failed`, `ffmpeg_probe_failed` | FFmpeg could not set up frame extraction. Treat it as a problem file. |
+| `extract failed`, `decode_invalid_data` | FFmpeg found invalid data in the file. Usually a damaged file; check it with `ffprobe`. |
+| `request skipped`, `file_cooldown` | The whole file is waiting after an earlier failure; `retry_after` says until when. |
+| `upload failed` | Extraction worked but the image could not be saved. Check free space and permissions of local artwork storage, or the bucket credentials and endpoint if artwork is in S3. |
+
+**When it runs.** Opening a title's page queues its previews, playback queues
+them at a higher priority, and a hidden Chapter Thumbnail Backfill task looks
+for missing ones every six hours. That task does not appear under **Admin >
+Scheduled Tasks**, and there is no button to run it. If **Generate chapter
+thumbnails on** (**Admin > Settings > Playback**) sends the work to a
+transcode node, that node must be connected and healthy.
+
+**Retry timing.** A failed chapter is retried 15 minutes after its first
+failure, 1 hour after its second, 6 hours after its third, and 24 hours after
+each failure from then on.
+`decode_invalid_data`, `ffmpeg_probe_failed`, and `tonemap_unsupported` pause
+the whole file instead: Silo logs `chapter thumbnail file marked failed` with
+a `retry_after` time, and until then every request for the file logs
+`file_cooldown`. `decode_invalid_data` starts at 24 hours on its first
+failure, so reopening the title a few minutes later will not retry it. A file
+waiting out its cooldown is not stuck; tell the user when it will be retried
+rather than changing anything.
+
+To see how many files are paused, and why, without reading any rows:
+
+```sh
+docker compose exec -T postgres psql -U silo -d silo -At <<'SQL'
+select split_part(chapter_thumbnail_last_error, ':', 1) as reason,
+       count(*) as files,
+       count(*) filter (where chapter_thumbnail_retry_after > now()) as still_waiting
+from media_files
+where coalesce(chapter_thumbnail_last_error, '') <> ''
+group by 1 order by 2 desc;
+SQL
+```
+
+This counts files whose latest attempt ended in a whole-file failure; a later
+successful run clears it. Do not write to these columns to force a retry.
+
 ## Transcode nodes (distributed setups)
 
 Only relevant when the user runs separate `proxy` or `transcode` containers.

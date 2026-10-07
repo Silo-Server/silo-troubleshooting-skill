@@ -152,7 +152,7 @@ errors in the logs.
 | Upgrading, rolling back, or "it broke after an update" | `references/upgrades-and-rollback.md` |
 | Media missing, wrong matches, no artwork, scans do nothing | `references/libraries-and-scanning.md` |
 | Search results missing, stale, or slow; Search status warnings; Meilisearch not connecting or its index not building | `references/search-and-meilisearch.md` |
-| Will not play, buffers, no GPU transcoding, HDR looks grey, node problems | `references/playback-and-transcoding.md` |
+| Will not play, buffers, no GPU transcoding, HDR looks grey, node problems, chapter previews missing | `references/playback-and-transcoding.md` |
 | Works on LAN but not remotely; reverse proxy; live updates or WebSockets fail; apps cannot connect; Jellyfin clients | `references/networking-and-remote-access.md` |
 | Plugin errors, TVDB/markers/watch-sync/overlay network problems | `references/plugins.md` |
 | Keeps coming back or cannot be caught in the act: slowdowns, memory growth, OOM restarts, CPU spikes, hangs, stuck background work; the user wants monitoring | `references/metrics-and-profiling.md` |
