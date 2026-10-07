@@ -1,6 +1,6 @@
 ---
 name: silo-troubleshooting
-description: Diagnose and safely fix a self-hosted Silo media server (Docker Compose, Unraid, or plain Docker). Use when the user's Silo server will not start, is unhealthy, fails to scan or match media, has search or Meilisearch problems, will not play or transcode, cannot be reached remotely, has plugin or GPU problems, or needs an upgrade or rollback. Not for developing Silo itself.
+description: Diagnose and safely fix a self-hosted Silo media server (Docker Compose, Unraid, or plain Docker). Use when the user's Silo server will not start, is unhealthy, fails to scan or match media, has search or Meilisearch problems, will not play or transcode, cannot be reached remotely, has plugin or GPU problems, or needs an upgrade or rollback. Also use to draft an accurate Silo bug report or feature request. Not for developing Silo itself.
 ---
 
 # Silo troubleshooting
@@ -62,9 +62,11 @@ and protect their data above everything else.
 7. **Say what you do not know.** Mark guesses as guesses. If the evidence
    points to a bug in Silo, stop changing things and help the user report it
    (`references/bug-reports-and-feature-requests.md`).
-8. **Draft, never post.** You may draft bug reports, feature requests, and
-   issue comments. Always search for existing open issues and pull requests
-   first. Never file, post, comment, or react anywhere on the user's behalf.
+8. **Draft, review, never post.** You may draft bug reports, feature
+   requests, and issue comments. Always search for existing open issues and
+   pull requests first, and have independent subagents review every draft
+   before you hand it over (`references/bug-reports-and-feature-requests.md`).
+   Never file, post, comment, or react anywhere on the user's behalf.
 
 ## Workflow
 
@@ -223,7 +225,7 @@ next occurrence. Offer to give the steps or to enable them yourself, following
 
 If the root cause looks like a Silo bug, or the user wanted
 something Silo does not do yet, offer to check for existing issues and pull
-requests and draft a report with
+requests, then draft a report and have it reviewed with
 `references/bug-reports-and-feature-requests.md`.
 
 ## Out of scope
