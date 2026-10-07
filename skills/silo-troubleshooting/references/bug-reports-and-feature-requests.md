@@ -262,7 +262,10 @@ Rules:
 
 - Keep **What happened** and **Steps to reproduce** to what the user saw and
   did. Put every inference under **Technical notes**.
-- Every statement outside **Technical notes** must trace to an entry in
+- Every statement about the problem, the setup, or the user's request must
+  trace to an entry in `evidence.md`, except inferences under **Technical
+  notes**. The AI disclosure, the review summary, and the list of searches
+  describe how the report was made; they come from your own work, not from
   `evidence.md`.
 - State frequency and scope exactly as observed: "2 of 2 attempts on the web
   app", not "always".
@@ -398,7 +401,8 @@ Then add the lens:
   marked redaction or a marked omission; causes, inferences, or guesses outside
   Technical notes; guesses inside Technical notes that are not labelled as
   guesses; and frequency or scope ('always', 'every client') wider than the
-  evidence shows."
+  evidence shows. Skip the AI disclosure, the review summary, and the list of
+  searches; they describe how the report was made."
 - **Reproducibility**: "Read the draft as a Silo maintainer who has never seen
   this server and has only this text. Could you reproduce the problem? Flag a
   missing Silo build, deployment detail, client name and version, or device
