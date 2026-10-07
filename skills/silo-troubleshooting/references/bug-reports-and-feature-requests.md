@@ -17,7 +17,8 @@ file, post, comment, or react on the user's behalf.
 ## Step 1: Decide which kind it is
 
 - **Bug**: Silo does something wrong, crashes, or does not do what its own
-  settings, UI, or documentation say. The user can make it happen again.
+  settings, UI, or documentation say. The user can make it happen again, or
+  it has happened more than once and logs or other evidence show it.
 - **Feature request**: Silo works as designed, but the user wants it to do
   something it does not do today.
 - **Comment on an existing issue**: Step 2 finds a matching open issue and
@@ -94,7 +95,9 @@ actions. Keep a working folder for the report, outside the Compose directory:
 mktemp -d "${TMPDIR:-/tmp}/silo-report.XXXXXX"
 ```
 
-Note the path it prints; the rest of this guide calls it `<report_dir>`. Most
+Creating this folder and writing notes in it does not touch Silo, so the
+backup gate and per-change consent in `SKILL.md` do not apply to it. Note the
+path it prints; the rest of this guide calls it `<report_dir>`. Most
 agents start a new shell for each command, so a shell variable would not
 survive to the next step: use the literal path every time. Tell the user where
 the folder is.
@@ -171,6 +174,9 @@ The apps do not show the server version; get it from the admin sidebar.
 The snapshot script already masks credentials in its output; copy the
 relevant parts into `evidence.md`, replacing any other private values as
 above.
+
+A comment on an existing issue follows the same path, limited to the facts
+the issue lacks.
 
 ### Feature requests
 
@@ -299,6 +305,20 @@ useful when it explains the problem rather than prescribing a solution.
 
 Confirm with the user that the problem and proposed behavior match what they
 want before the review.
+
+### Comment on an existing issue
+
+Keep it short and limited to what the issue does not already say.
+
+```markdown
+**Comment on:** <link to the issue>
+
+<What is new: a different build, new log lines, a reliable way to reproduce it, or a client the issue does not mention. Facts only, with the Silo build and, for an app, its version and device.>
+
+    <raw log lines, if any, redactions and omissions marked>
+
+AI disclosure: <harness>, <model identifier>, <involvement>. Review: <one-sentence summary from Step 7>.
+```
 
 ## Step 6: Redact
 
@@ -431,10 +451,11 @@ Show the user:
 
 - The final draft.
 - What the review changed, in a short list, and anything left unresolved.
-- Which repository and issue form to use (Step 4).
+- Which repository and issue form to use (Step 4), or, for a comment, the
+  issue to post it on.
 
-For a bug, ask the user to confirm that they ran the steps themselves and
-that every fact matches their server. For a feature request, ask them to
+For a bug or a comment, ask the user to confirm that they ran the steps
+themselves and that every fact matches their server. For a feature request, ask them to
 confirm that the problem and proposed behavior say what they mean. Then let
 them post it. Remind them that they can delete `<report_dir>` once the report
 is posted.

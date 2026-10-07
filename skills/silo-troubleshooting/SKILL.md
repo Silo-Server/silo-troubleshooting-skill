@@ -25,7 +25,9 @@ and protect their data above everything else.
    `SECRET_KEY`, and their deployment configuration. If not, tell them to make
    one with the tools they already use and wait. Do not write backup or
    restore commands for them; setups differ too much. Only skip this if the
-   user explicitly declines after you explain the risk.
+   user explicitly declines after you explain the risk. Writing report notes
+   in a temporary folder (`references/bug-reports-and-feature-requests.md`)
+   does not touch Silo and needs no backup.
 3. **One change at a time, with consent.** For each change, show the exact
    command, say what it changes, what could go wrong, and how to undo it, then
    wait for a clear yes. Consent for one change does not carry over to the
