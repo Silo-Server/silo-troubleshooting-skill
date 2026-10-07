@@ -109,7 +109,7 @@ draft against this file, so a fact that is not in it cannot go in the draft.
 
 Every reviewer reads `evidence.md`, so sanitize output before you write it
 there. Replace the private values listed in Step 6 with marked placeholders
-such as `[REDACTED-HOST-1]`, using the same placeholder for the same value
+such as `[LAN-HOST-1]`, using the same placeholder for the same value
 throughout. Leave everything else exactly as printed; do not summarise or tidy
 it. Do not keep an unredacted copy in the folder.
 
@@ -329,7 +329,10 @@ anything that slipped through, marking each change:
 
 - `SECRET_KEY`, database passwords, `DATABASE_URL`, API keys, access tokens,
   cookies, and `Authorization` headers.
-- Public hostnames, domain names, and Tailscale names.
+- Hostnames and domain names, public or private (including `.local` and LAN
+  DNS names), and Tailscale names. Use placeholders that keep the kind, such
+  as `[LAN-HOST-1]` or `[PUBLIC-HOST-1]`. `localhost` and Compose service
+  names such as `silo`, `postgres`, and `redis` can stay.
 - IP addresses, public or private. Use placeholders that keep the kind of
   address, such as `[LAN-IP-1]`, `[TAILNET-IP-1]`, or `[PUBLIC-IP-1]`, because
   whether a client was local, on a tailnet, or remote often matters.
@@ -413,11 +416,11 @@ Then add the lens:
   support."
 - **Privacy**: "Find anything in the draft that should not be public: secrets,
   tokens, passwords, API keys, cookies, Authorization headers, connection
-  strings, public hostnames and domains, IP addresses (public or private) not
-  replaced by a placeholder, Tailscale names, email addresses, household
-  members' usernames, and media titles or paths. Flag redactions that are not
-  marked, and redactions that removed something a maintainer needs; suggest a
-  safe placeholder instead."
+  strings, hostnames, domains, and IP addresses (public or private) not
+  replaced by a placeholder, other than localhost and Compose service names,
+  Tailscale names, email addresses, household members' usernames, and media
+  titles or paths. Flag redactions that are not marked, and redactions that
+  removed something a maintainer needs; suggest a safe placeholder instead."
 - **Duplicates**: "Try to show this is already reported or already fixed.
   Search open and recently closed issues and pull requests across the
   Silo-Server organization, using terms the draft does not use: distinctive
