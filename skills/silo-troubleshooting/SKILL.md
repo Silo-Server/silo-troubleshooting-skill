@@ -64,9 +64,11 @@ and protect their data above everything else.
    (`references/bug-reports-and-feature-requests.md`).
 8. **Draft, review, never post.** You may draft bug reports, feature
    requests, and issue comments. Always search for existing open issues and
-   pull requests first, and have independent subagents review every draft
-   before you hand it over (`references/bug-reports-and-feature-requests.md`).
-   Never file, post, comment, or react anywhere on the user's behalf.
+   pull requests first, and have every draft reviewed before you hand it
+   over: by independent subagents where your harness supports them, otherwise
+   by the disclosed self-review in
+   `references/bug-reports-and-feature-requests.md`. Never file, post,
+   comment, or react anywhere on the user's behalf.
 
 ## Workflow
 

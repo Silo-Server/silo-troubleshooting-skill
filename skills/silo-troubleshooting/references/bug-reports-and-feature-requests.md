@@ -45,7 +45,8 @@ a fix may already exist in a newer build.
 
 Search several ways: the exact error message (a distinctive fragment in
 quotes), the feature or setting name, and plain-language synonyms ("GPU",
-"hardware acceleration", "VAAPI", "QSV").
+"hardware acceleration", "VAAPI", "QSV"). Searches go to GitHub, so never put
+hostnames, IP addresses, usernames, email addresses, or media titles in them.
 
 With the GitHub CLI (`gh`) installed:
 
@@ -84,22 +85,32 @@ what you found:
 - **Nothing relevant**: draft a new report and mention that you searched,
   with the search terms you used.
 
-## Step 3: Reproduce and record the evidence
+## Step 3: Record the evidence
 
 Everything in a report must come from the user's own server and the user's own
 actions. Keep a working folder for the report, outside the Compose directory:
 
 ```sh
-report_dir=$(mktemp -d "${TMPDIR:-/tmp}/silo-report.XXXXXX"); echo "$report_dir"
+mktemp -d "${TMPDIR:-/tmp}/silo-report.XXXXXX"
 ```
 
-It holds two files: `evidence.md` and, later, `draft.md`. Tell the user where
-the folder is. It contains unredacted output, so it stays on their machine.
+Note the path it prints; the rest of this guide calls it `<report_dir>`. Most
+agents start a new shell for each command, so a shell variable would not
+survive to the next step: use the literal path every time. Tell the user where
+the folder is.
 
-Write each fact into `evidence.md` as you collect it: what it shows, the exact
-command or admin page it came from, and the raw output, pasted unedited. Do not
-summarise output there. The reviewers in Step 7 check the draft against this
-file, so a fact that is not in it cannot go in the draft.
+The folder holds two files: `evidence.md` and, later, `draft.md`. Write each
+fact into `evidence.md` as you collect it: what it shows, the exact command or
+admin page it came from, and its output. The reviewers in Step 7 check the
+draft against this file, so a fact that is not in it cannot go in the draft.
+
+Every reviewer reads `evidence.md`, so sanitize output before you write it
+there. Replace the private values listed in Step 6 with marked placeholders
+such as `[REDACTED-HOST-1]`, using the same placeholder for the same value
+throughout. Leave everything else exactly as printed; do not summarise or tidy
+it. Do not keep an unredacted copy in the folder.
+
+### Bugs
 
 **Reproduce it now.** Ask the user to make the problem happen again on their
 current build, note the time, and capture the logs from that attempt. If it
@@ -157,8 +168,16 @@ Problems in an app also need:
 
 The apps do not show the server version; get it from the admin sidebar.
 
-The snapshot script's output is already masked; copy the relevant parts into
-`evidence.md` too.
+The snapshot script already masks credentials in its output; copy the
+relevant parts into `evidence.md`, replacing any other private values as
+above.
+
+### Feature requests
+
+There is nothing to reproduce. Record what the user is trying to do and what
+stops them, in their words, and anything you checked about what Silo does
+today: a setting, a documentation page, or command output. The review checks
+the request against these entries.
 
 ## Step 4: Choose the repository
 
@@ -175,7 +194,7 @@ issue form to choose there. Where and whether to post is their decision.
 
 ## Step 5: Draft
 
-Write the draft to `$report_dir/draft.md`, matching the fields of the issue
+Write the draft to `<report_dir>/draft.md`, matching the fields of the issue
 form in the repository you chose, so the user can paste each part. The template
 below follows the `silo-server` bug form. The `silo-apple` and `silo-android`
 bug forms ask for the device, device model and OS version, app version and
@@ -283,7 +302,9 @@ want before the review.
 
 ## Step 6: Redact
 
-Before the review, remove or replace these in the draft, and mark each change:
+These values never go into `evidence.md` or a draft. The draft inherits the
+placeholders from `evidence.md`; before the review, check it again and replace
+anything that slipped through, marking each change:
 
 - `SECRET_KEY`, database passwords, `DATABASE_URL`, API keys, access tokens,
   cookies, and `Authorization` headers.
@@ -308,8 +329,8 @@ Run it with subagents:
 - Use your harness's subagent feature, for example Claude Code's Agent tool.
   Start one reviewer per lens in the table below, in parallel, each in a fresh
   context.
-- Give each reviewer only its brief, with the real `$report_dir` path filled
-  in. Do not add your reasoning or a summary of the conversation; the point is
+- Give each reviewer only its brief, with the literal `<report_dir>` path
+  filled in. Do not add your reasoning or a summary of the conversation; the point is
   that the reviewer does not share your assumptions.
 - If your harness cannot start subagents, tell the user. Then do each lens
   yourself as a separate pass that reads only the two files, and write in the
@@ -331,9 +352,10 @@ author posts it. Your job is to find what is wrong with it, not to approve it.
 Assume there are problems until you have checked every sentence your lens
 covers.
 
-Read <report_dir>/draft.md (the draft) and <report_dir>/evidence.md (the raw
-evidence it was written from). Do not run commands against any server, edit
-any file, or post anything.
+Read <report_dir>/draft.md (the draft) and <report_dir>/evidence.md (the
+evidence it was written from, with private values replaced by marked
+placeholders). Do not run commands against any server, edit any file, or post
+anything.
 
 Return a list of findings. For each one give: severity (blocker, should-fix,
 or nit), the exact sentence or field from the draft, what is wrong, and the
@@ -375,7 +397,9 @@ Then add the lens:
   Search open and recently closed issues and pull requests across the
   Silo-Server organization, using terms the draft does not use: distinctive
   fragments of each error message, setting and feature names, and plain
-  synonyms. Use `gh search issues --owner Silo-Server ...` and
+  synonyms. Never put hostnames, IP addresses, usernames, email addresses,
+  media titles, or redaction placeholders in a search. Use
+  `gh search issues --owner Silo-Server ...` and
   `gh search prs --owner Silo-Server ...`, or the GitHub search API. Run about
   a dozen searches at most; if search is rate-limited, list the terms you
   could not search instead of downloading whole repositories. Report each
@@ -396,7 +420,7 @@ Resolve the findings:
 - Fill the draft's **Independent or adversarial review** field with a few
   sentences: how many reviewers, which lenses, what they found, and what
   changed. For example: "Four fresh subagents (evidence, reproducibility,
-  privacy, duplicates) reviewed the draft against the raw evidence. They found
+  privacy, duplicates) reviewed the draft against the evidence. They found
   an unmarked hostname in the logs, a frequency stated as 'always' after two
   attempts, and a missing app build; all three were fixed. The duplicate
   search found no matching issue."
@@ -409,10 +433,11 @@ Show the user:
 - What the review changed, in a short list, and anything left unresolved.
 - Which repository and issue form to use (Step 4).
 
-Ask the user to confirm that they ran the steps themselves and that every fact
-matches their server, then let them post it. Remind them that `$report_dir`
-holds unredacted output and that they can delete it once the report is
-posted.
+For a bug, ask the user to confirm that they ran the steps themselves and
+that every fact matches their server. For a feature request, ask them to
+confirm that the problem and proposed behavior say what they mean. Then let
+them post it. Remind them that they can delete `<report_dir>` once the report
+is posted.
 
 ## Client diagnostics
 

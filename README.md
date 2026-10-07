@@ -36,8 +36,8 @@ then works through the problem with you in your own terminal.
   endpoints, so the next occurrence leaves evidence
 - Writing an accurate bug report or feature request for Silo. The agent
   checks that no open issue or pull request already covers it, collects the
-  evidence from your server, and has independent reviewers check the draft
-  before you post it
+  evidence from your server for a bug (or your use case for a feature
+  request), and has the draft reviewed before you post it
 
 It supports Docker Compose (the standard install), Unraid, and plain Docker.
 Kubernetes and other setups work too, but the agent has to adapt the commands.
@@ -169,15 +169,18 @@ Example prompts:
 8. If the problem looks like a Silo bug, or you want something Silo does not
    do yet, search Silo's open issues and pull requests first. If one exists,
    it gives you the link (and drafts a comment if you have something to add).
-   If not, it asks you to reproduce the problem, records the evidence, and
-   drafts a bug report or feature request in the format of Silo's issue
-   forms.
-9. Before showing you the draft, start independent reviewers that try to
-   break it: one checks every claim against the evidence, one checks that a
-   maintainer could reproduce it, one looks for private details, and one
-   searches for an existing issue. It fixes what they find, asks you for
-   anything only you can supply, and tells you which repository to post it
-   in. You post it yourself.
+   If not, it drafts a bug report or feature request in the format of Silo's
+   issue forms. For a bug it first asks you to reproduce the problem and
+   records the evidence; for a feature request it records what you are trying
+   to do.
+9. Before showing you the draft, it has reviewers try to break it: separate
+   subagents where the agent supports them, otherwise a self-review that the
+   report discloses. For a bug, one checks every claim against the evidence,
+   one checks that a maintainer could reproduce it, one looks for private
+   details, and one searches for an existing issue. A feature request gets a
+   problem-and-scope check, the privacy check, and the search. It fixes what
+   they find, asks you for anything only you can supply, and tells you which
+   repository to post it in. You post it yourself.
 
 ### What it will not do
 
