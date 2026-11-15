@@ -1,10 +1,10 @@
 # Silo troubleshooting skill
 
-A skill for AI coding agents such as Claude Code and Codex. It helps them
-diagnose and fix a self-hosted [Silo](https://github.com/Silo-Server/silo-server)
-media server. It tells the agent where Silo keeps its logs, which settings
-matter, what common errors mean, and which actions are off-limits. The agent
-then works through the problem with you in your own terminal.
+Get help fixing your self-hosted [Silo](https://github.com/Silo-Server/silo-server)
+media server from Claude Code or Codex. There is nothing to install: paste
+this repository's link into the agent and describe what is wrong. The agent
+reads this guide, checks your server's logs and settings, explains what it
+finds, and asks before it changes anything.
 
 > [!CAUTION]
 > **Take a backup before you start. Don't blame us if Claude or Codex deletes
@@ -17,6 +17,111 @@ then works through the problem with you in your own terminal.
 > no when you are not sure.
 >
 > Provided as is, with no warranty (see [License](#license)).
+
+## How to use it
+
+1. **Open Claude Code or Codex in a terminal on the machine that runs Silo.**
+   If you usually reach that machine over SSH, SSH in first and start the
+   agent there. If Silo runs in Docker Compose, `cd` into the folder with its
+   `docker-compose.yml` first.
+   - Claude Code: run `claude` ([install Claude Code](https://code.claude.com/docs))
+   - Codex: run `codex` ([install Codex CLI](https://developers.openai.com/codex))
+2. **Paste this link and say what is not working:**
+
+   ```text
+   https://github.com/Silo-Server/silo-troubleshooting-skill
+   ```
+
+3. **Answer its questions.** It may ask permission to download the guide
+   from GitHub (say yes). Then it asks how Silo is installed and looks around
+   your server. Before each change it shows you the exact command and waits
+   for your yes.
+
+> [!IMPORTANT]
+> **Chat apps cannot do this.** The Claude and ChatGPT chat apps and websites
+> cannot run commands on your server, so they cannot follow this guide.
+> Claude Code on the web and Codex cloud tasks run on a remote computer and
+> cannot reach your server either. Use Claude Code or Codex in a terminal on
+> your Silo machine.
+
+### Example prompts
+
+Copy one, swap in your problem, and paste it into Claude Code or Codex:
+
+```text
+https://github.com/Silo-Server/silo-troubleshooting-skill
+Use this to help me figure out why my Silo server keeps restarting since I updated it.
+```
+
+```text
+https://github.com/Silo-Server/silo-troubleshooting-skill
+Use this to help me figure out why Silo can't see my new movies folder.
+```
+
+```text
+https://github.com/Silo-Server/silo-troubleshooting-skill
+Playback works at home but not away from home. I use Nginx Proxy Manager. Help me figure out why.
+```
+
+```text
+https://github.com/Silo-Server/silo-troubleshooting-skill
+Silo isn't using hardware transcoding on my Intel NUC. Help me figure out why.
+```
+
+```text
+https://github.com/Silo-Server/silo-troubleshooting-skill
+Silo runs on Unraid and search stopped finding new shows. Help me figure out what's wrong.
+```
+
+```text
+https://github.com/Silo-Server/silo-troubleshooting-skill
+Walk me through safely updating Silo to the latest build.
+```
+
+```text
+https://github.com/Silo-Server/silo-troubleshooting-skill
+Help me write a bug report: subtitles don't show on my Apple TV for one file.
+```
+
+### Which permission mode to use
+
+Auto mode works well. A separate reviewer model checks each action, and the
+guide still has the agent ask you before every change and leave destructive
+steps for you to run yourself.
+
+- Claude Code: auto mode (`claude --permission-mode auto`, or Shift+Tab
+  during a session). It is already the default on Pro, Max, and Team plans.
+- Codex: automatic review (`codex --approve-for-me`).
+
+If you would rather approve every command yourself, use
+`claude --permission-mode manual` or Codex's default approval prompts. Avoid
+the modes that skip all checks (Claude Code's
+`--dangerously-skip-permissions`, Codex's
+`--dangerously-bypass-approvals-and-sandbox`).
+
+## For AI agents
+
+If the user gave you this link, this repository is a skill for diagnosing
+and fixing their Silo server. Load it like this:
+
+1. If the skill is already installed (for example as the
+   `silo-troubleshooting` plugin), use the installed copy and skip step 2.
+2. Clone the repository into a new private temporary folder, asking for
+   network access if your sandbox needs it:
+
+   ```sh
+   dir="$(mktemp -d)" && git clone --depth 1 https://github.com/Silo-Server/silo-troubleshooting-skill.git "$dir/silo-troubleshooting-skill" && echo "$dir/silo-troubleshooting-skill"
+   ```
+
+   Always make a fresh folder this way rather than reusing one that already
+   exists. If you cannot clone, download the files under
+   `https://raw.githubusercontent.com/Silo-Server/silo-troubleshooting-skill/main/skills/silo-troubleshooting/`
+   into a folder made with `mktemp -d`: `SKILL.md` first, then each file it
+   points you to, including `scripts/silo-snapshot.sh` before you run it.
+3. Read `skills/silo-troubleshooting/SKILL.md` in full and follow it for the
+   rest of the session. Its safety rules apply from your first command.
+   `<skill-dir>` in that file means the `skills/silo-troubleshooting` folder
+   of your copy.
 
 ## What it helps with
 
@@ -43,19 +148,6 @@ then works through the problem with you in your own terminal.
 It supports Docker Compose (the standard install), Unraid, and plain Docker.
 Kubernetes and other setups work too, but the agent has to adapt the commands.
 
-## What you need
-
-- A running or broken Silo install you administer.
-- A terminal on the machine that runs Silo, or SSH access to it.
-- One of:
-  - [Claude Code](https://code.claude.com/docs)
-  - [Codex CLI](https://developers.openai.com/codex)
-  - Any agent that can read a Markdown skill file and run shell commands
-
-The report review uses subagents where the agent supports them, as Claude
-Code does. Without them, the agent reviews its own draft and says so in the
-report.
-
 ## Back up first
 
 Back up your Silo server before you let an agent near it, using whatever
@@ -73,81 +165,7 @@ your backup includes:
 Then check that you can restore it. The agent asks about your backup before
 it changes anything.
 
-## Install
-
-### Claude Code: plugin (recommended)
-
-Inside Claude Code:
-
-```text
-/plugin marketplace add Silo-Server/silo-troubleshooting-skill
-/plugin install silo-troubleshooting@silo
-```
-
-Run `/reload-plugins` if Claude Code asks you to. `/plugin marketplace update
-silo` pulls in later updates.
-
-### Claude Code: manual
-
-```sh
-git clone https://github.com/Silo-Server/silo-troubleshooting-skill.git
-mkdir -p ~/.claude/skills
-ln -s "$PWD/silo-troubleshooting-skill/skills/silo-troubleshooting" ~/.claude/skills/silo-troubleshooting
-```
-
-To update later, run `git pull` in the clone.
-
-### Codex CLI
-
-```sh
-git clone https://github.com/Silo-Server/silo-troubleshooting-skill.git
-mkdir -p ~/.agents/skills
-ln -s "$PWD/silo-troubleshooting-skill/skills/silo-troubleshooting" ~/.agents/skills/silo-troubleshooting
-```
-
-Restart Codex so it picks up the skill. To update later, run `git pull` in the
-clone.
-
-### Other agents
-
-Point the agent at `skills/silo-troubleshooting/SKILL.md` and tell it to
-follow that file. The other files it needs are in the same folder.
-
-## Use it
-
-1. Open a terminal on the machine that runs Silo. If Silo runs in Docker
-   Compose, `cd` into the directory with its `docker-compose.yml`.
-2. Start your agent there (`claude` or `codex`).
-3. **Pick a permission mode.** Auto mode works well for this. A separate
-   reviewer model checks each action, and the skill still asks you before
-   every change and leaves destructive steps for you to run yourself.
-   - Claude Code: auto mode (`claude --permission-mode auto`, or Shift+Tab
-     during a session). It is already the default on Pro, Max, and Team plans.
-   - Codex: automatic review (`codex --approve-for-me`).
-
-   If you would rather approve every command yourself, use manual approval
-   instead: `claude --permission-mode manual`, or Codex's default approval
-   prompts. Avoid the modes that skip all checks (Claude Code's
-   `--dangerously-skip-permissions`, Codex's
-   `--dangerously-bypass-approvals-and-sandbox`).
-4. Describe the problem in plain words. The skill loads automatically when
-   you mention Silo. To call it explicitly, use
-   `/silo-troubleshooting:silo-troubleshooting` (Claude Code plugin),
-   `/silo-troubleshooting` (Claude Code manual install), or
-   `$silo-troubleshooting` (Codex).
-
-Example prompts:
-
-- "My Silo server keeps restarting after I updated it. Help me figure out
-  why."
-- "Silo can't see my new movies folder."
-- "Playback works at home but not away from home. I use Nginx Proxy Manager."
-- "Hardware transcoding isn't being used on my Intel NUC."
-- "Walk me through safely updating Silo to the latest build."
-- "Help me write a bug report: subtitles don't show on my Apple TV for one
-  file."
-
-### What the agent will do
+## What the agent will do
 
 1. Ask how Silo is installed and what changed recently.
 2. Run a read-only snapshot script that collects container status, the
@@ -183,7 +201,7 @@ Example prompts:
    search. It fixes what they find, asks you for anything only you can supply,
    and tells you which repository to post it in. You post it yourself.
 
-### What it will not do
+## What it will not do
 
 - Show your `SECRET_KEY`, passwords, or tokens in the conversation, or ask
   you to paste them.
@@ -203,6 +221,20 @@ share with your AI provider.
 
 When you share output with other people (GitHub issues, Discord), check it for
 hostnames, IP addresses, email addresses, and media names first.
+
+## Install it permanently (optional)
+
+You do not need this; pasting the link works every time. If you use Claude
+Code often and want the skill to load on its own whenever you mention Silo,
+install it as a plugin from inside Claude Code:
+
+```text
+/plugin marketplace add Silo-Server/silo-troubleshooting-skill
+/plugin install silo-troubleshooting@silo
+```
+
+Run `/reload-plugins` if Claude Code asks you to. `/plugin marketplace update
+silo` pulls in later updates.
 
 ## Repository layout
 
