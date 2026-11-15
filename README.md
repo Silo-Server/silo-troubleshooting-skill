@@ -106,18 +106,18 @@ and fixing their Silo server. Load it like this:
 
 1. If the skill is already installed (for example as the
    `silo-troubleshooting` plugin), use the installed copy and skip step 2.
-2. Clone the repository into a temporary folder, asking for network access
-   if your sandbox needs it:
+2. Clone the repository into a new private temporary folder, asking for
+   network access if your sandbox needs it:
 
    ```sh
-   git clone --depth 1 https://github.com/Silo-Server/silo-troubleshooting-skill.git "${TMPDIR:-/tmp}/silo-troubleshooting-skill"
+   dir="$(mktemp -d)" && git clone --depth 1 https://github.com/Silo-Server/silo-troubleshooting-skill.git "$dir/silo-troubleshooting-skill" && echo "$dir/silo-troubleshooting-skill"
    ```
 
-   If that folder already exists, run `git -C "${TMPDIR:-/tmp}/silo-troubleshooting-skill" pull`
-   instead. If you cannot clone, download the files under
-   `https://raw.githubusercontent.com/Silo-Server/silo-troubleshooting-skill/main/skills/silo-troubleshooting/`:
-   `SKILL.md` first, then each file it points you to, saving
-   `scripts/silo-snapshot.sh` to a temporary file before you run it.
+   Always make a fresh folder this way rather than reusing one that already
+   exists. If you cannot clone, download the files under
+   `https://raw.githubusercontent.com/Silo-Server/silo-troubleshooting-skill/main/skills/silo-troubleshooting/`
+   into a folder made with `mktemp -d`: `SKILL.md` first, then each file it
+   points you to, including `scripts/silo-snapshot.sh` before you run it.
 3. Read `skills/silo-troubleshooting/SKILL.md` in full and follow it for the
    rest of the session. Its safety rules apply from your first command.
    `<skill-dir>` in that file means the `skills/silo-troubleshooting` folder
